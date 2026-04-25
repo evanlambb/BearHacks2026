@@ -17,30 +17,7 @@ import type {
 } from "./types";
 
 type SupabaseLike = {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: unknown) => {
-        eq: (column: string, value: unknown) => {
-          eq: (column: string, value: unknown) => {
-            limit: (count: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-          };
-          limit: (count: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-          maybeSingle: () => Promise<{ data: unknown | null; error: { message: string } | null }>;
-          single: () => Promise<{ data: unknown | null; error: { message: string } | null }>;
-        };
-        limit: (count: number) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-        maybeSingle: () => Promise<{ data: unknown | null; error: { message: string } | null }>;
-        single: () => Promise<{ data: unknown | null; error: { message: string } | null }>;
-      };
-    };
-    upsert: (
-      value: unknown,
-      options?: { onConflict?: string; ignoreDuplicates?: boolean },
-    ) => Promise<{ data: unknown; error: { message: string } | null }> & {
-      select: (columns: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
-    };
-    insert: (value: unknown) => Promise<{ data: unknown; error: { message: string } | null }>;
-  };
+  from: (table: string) => any;
 };
 
 type RunScoutDeps = {
@@ -65,7 +42,7 @@ async function resolveDefaultClients(): Promise<{ wipoClient: IWipoClient; epoCl
 async function loadScoutOrThrow(supabase: SupabaseLike, scoutId: string): Promise<ScoutRow> {
   const { data, error } = await supabase.from("scouts").select("*").eq("id", scoutId).single();
   if (error || !data) throw new Error(error?.message ?? "Scout not found");
-  return data;
+  return data as ScoutRow;
 }
 
 async function upsertPatent(supabase: SupabaseLike, patent: PatentInsert): Promise<boolean> {
