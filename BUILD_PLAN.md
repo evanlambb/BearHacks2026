@@ -10,9 +10,12 @@
 
 - **Name:** Pharma Scout (working title)
 - **Tagline:** "8 months to 8 seconds — autonomous patent-cliff opportunity scouting for generic pharma BD teams."
-- **Hackathon:** BearHacks 2026 (this weekend, 36-hour solo build)
+- **Hackathon:** BearHacks 2026 — already underway
+- **Build budget:** ~10 hours of focused build, then remaining time for demo polish & rehearsal
+- **Demo format:** Live demo (with a 90-second screen recording as backup-backup)
 - **Repo:** `c:\Users\Evan\github\BearHacks2026`
 - **Builder:** Solo developer
+- **Deployment:** Local only (`npm run dev`) — no Vercel, no remote hosting
 
 ---
 
@@ -32,16 +35,18 @@ A BD lead at a generic manufacturer wants to find oncology assets losing US excl
 |---|---|---|
 | Hero drug | **Ibrance (palbociclib)** | Pfizer blockbuster (~$5B/yr), US LoE early 2027, active Para IV drama, clean Orange Book footprint, public 10-K revenue. Backup: Revlimid. |
 | Persona | BD lead at generic manufacturer | Small-molecule oncology, US, 2027–2029 LoE window |
-| LLM provider | **Google Gemini** | Free tier generous, structured output works well |
-| Triage model | `gemini-2.0-flash` | Cheap match-or-skip step |
+| LLM provider | **Google Gemini (paid tier — confirmed working)** | Pro tier required because `gemini-2.5-pro` is `limit: 0` on free tier. |
+| Triage model | `gemini-2.5-flash` | Cheap match-or-skip step |
 | Synthesis model | `gemini-2.5-pro` | Long-form structured dossier generation |
-| Frontend | **Next.js 15 (App Router) + Tailwind + shadcn/ui** | Single deploy, server components, premium look fast |
-| Backend | **Next.js API routes (NO FastAPI)** | Solo dev — collapse the stack. Vercel AI SDK handles streaming. |
-| LLM SDK | **Vercel AI SDK** with `@ai-sdk/google` | `streamObject` + Zod schemas for typed streaming |
-| Charts | Recharts (or hand-rolled SVG) | Patent timeline only |
-| Hosting | Vercel | Free, fast, streaming works OOTB |
+| Frontend | **Next.js 15 (App Router) + Tailwind + shadcn/ui** | Premium enterprise look in zero time |
+| Backend | **Next.js API routes (all TypeScript, no Python, no FastAPI)** | Single dev server, single language. The Python venv was just for key-testing — discarded. |
+| LLM SDK | **`@google/genai`** Node SDK called directly | No Vercel AI SDK — lighter, fewer abstractions, fine for a 10-hour MVP |
+| Charts | Hand-rolled SVG (preferred) or Recharts (fallback) | Patent timeline is the only viz — avoid the dependency if possible |
+| Hosting | **Local only** (`npm run dev`, demoed from laptop) | Eliminates "works locally / broken in prod" bugs |
 | Data source | FDA Orange Book zip → parsed once → `data/orange-book.json` static asset | No runtime ETL, no scraping, free |
-| Demo safety | `DEMO_MODE=true` env flag → serves cached golden dossier with simulated stream timing | **NON-NEGOTIABLE** — saves the live demo |
+| Streaming UX | **Section-by-section reveal**: two separate API endpoints (`/api/scout/summary`, `/api/scout/timeline`) called sequentially from the client; each section animates in when its endpoint resolves | Way simpler than partial-JSON streaming; same magical feel |
+| Demo safety | `DEMO_MODE=true` env flag → routes serve `data/golden-dossier.json` with simulated delays instead of hitting Gemini | **NON-NEGOTIABLE** — saves the live demo |
+| Accent color | **Teal `#0d9488`** | shadcn theme primary |
 
 ---
 
@@ -71,13 +76,15 @@ A BD lead at a generic manufacturer wants to find oncology assets losing US excl
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Next.js 15 App (Vercel)                                     │
+│  Next.js 15 App (local: npm run dev on :3000)                │
 │                                                              │
 │  app/                                                        │
-│    page.tsx                  ← Dashboard (3 scout cards)     │
-│    scouts/new/page.tsx       ← Setup form                    │
-│    scouts/[id]/page.tsx      ← Dossier viewer (streaming)    │
-│    api/scout/route.ts        ← POST: triage → synthesis      │
+│    page.tsx                       ← Dashboard                │
+│    scouts/new/page.tsx            ← Setup form               │
+│    scouts/[id]/page.tsx           ← Dossier viewer           │
+│    api/scout/triage/route.ts      ← POST: triage             │
+│    api/scout/summary/route.ts     ← POST: §1 drug summary    │
+│    api/scout/timeline/route.ts    ← POST: §2 patent timeline │
 │                                                              │
 │  components/                                                 │
 │    DossierSection.tsx                                        │
@@ -86,41 +93,61 @@ A BD lead at a generic manufacturer wants to find oncology assets losing US excl
 │    ScoutCard.tsx                                             │
 │                                                              │
 │  lib/                                                        │
-│    schema.ts                 ← Zod DossierSchema             │
-│    pipeline.ts               ← triage() + synthesize()       │
-│    prompts.ts                ← prompt templates              │
-│    orange-book.ts            ← data loader                   │
+│    schema.ts             ← Zod DossierSchema                 │
+│    gemini.ts             ← @google/genai client + helpers    │
+│    pipeline.ts           ← triage() + summarize() + timeline()│
+│    prompts.ts            ← prompt templates                  │
+│    orange-book.ts        ← data loader                       │
 │                                                              │
 │  data/                                                       │
-│    orange-book.json          ← parsed FDA data (Ibrance + 5  │
-│                                  filler drugs for realism)   │
-│    golden-dossier.json       ← cached demo output            │
+│    orange-book.json      ← parsed FDA data (Ibrance + ~5     │
+│                            filler drugs for realism)         │
+│    golden-dossier.json   ← cached demo output                │
 │                                                              │
 │  scripts/                                                    │
-│    parse-orange-book.ts      ← one-shot ETL                  │
-│    test-pipeline.ts          ← CLI prompt iteration          │
-│    cache-golden.ts           ← run pipeline, save output     │
+│    parse-orange-book.ts  ← one-shot ETL                      │
+│    test-pipeline.ts      ← CLI prompt iteration              │
+│    cache-golden.ts       ← run pipeline, save output         │
 └──────────────────────────────────────────────────────────────┘
                              │
                              ▼
                 ┌────────────────────────┐
                 │  Google Gemini API     │
-                │  (Flash + Pro)         │
+                │  2.5-flash + 2.5-pro   │
+                │  (paid tier)           │
                 └────────────────────────┘
 ```
 
-### Request flow
+### Request flow (real pipeline)
 
 ```
 User clicks "Deploy Scout"
-  → POST /api/scout { therapeutic_area, molecule_type, loe_window, region }
-  → if DEMO_MODE: stream data/golden-dossier.json with setTimeout delays
-  → else:
-      load data/orange-book.json
-      triage(flash, filter)  → { match: true, drug: "palbociclib", ... }
-      streamObject(pro, DossierSchema, drug_data)
-        ← Server-Sent Events to client
-  → client renders sections incrementally as Zod fields complete
+  → router.push("/scouts/new-result")  (client navigates immediately)
+  → Dossier page mounts, fires three sequential fetches:
+
+      1) POST /api/scout/triage    { filter }
+            → loads data/orange-book.json
+            → gemini-2.5-flash returns { match: true, ndaNumber: "207103" }
+
+      2) POST /api/scout/summary   { ndaNumber }
+            → gemini-2.5-pro with responseSchema=DrugSummarySchema
+            → returns drugSummary + its citations
+            → §1 card animates into view
+
+      3) POST /api/scout/timeline  { ndaNumber }
+            → gemini-2.5-pro with responseSchema=PatentTimelineSchema
+            → returns patentTimeline + its citations
+            → §2 card + citations sidebar animate in
+
+  → "Scout complete" badge appears
+```
+
+### Request flow (DEMO_MODE=true)
+
+```
+Each /api/scout/* route reads data/golden-dossier.json and returns
+its slice after a setTimeout delay (250ms / 1500ms / 1800ms) to mimic
+the real pipeline timing. No Gemini calls. Network-failure-proof.
 ```
 
 ---
@@ -236,30 +263,50 @@ Return JSON: { matches: [{ ndaNumber, ingredient, tradeName, primaryPatentExpiry
 If no matches, return { matches: [] }.
 ```
 
-### Synthesis prompt (Pro)
+### Section 1 — Drug Summary prompt (Pro, `responseSchema = DrugSummarySchema + citations`)
 
 ```
-You are a senior pharma BD analyst writing an Opportunity Dossier. Output MUST conform exactly to the provided JSON schema.
+You are a senior pharma BD analyst. Produce the "Drug & Mechanism Summary" section of an Opportunity Dossier. Output MUST conform exactly to the provided JSON schema.
 
-Drug data (FDA Orange Book): {{drug_record}}
+Drug data (FDA Orange Book row): {{drug_record}}
 
 Rules:
-1. Every numerical claim, date, and patent reference MUST cite a source via citationId.
-2. Annual revenue: cite Pfizer's most recent 10-K (annualRevenueUSD field, with revenueCitationId).
-3. Patent timeline events: include composition-of-matter expiry, any pediatric extension (+6 months), and the projected generic launch (= primary expiry + pediatric extension).
-4. Mechanism of action: 1-2 sentences, accurate, no marketing language.
-5. NEVER invent patent numbers, expiry dates, or revenue figures. If unknown, omit the field.
-6. The narrative field in patentTimeline should read like a Goldman Sachs equity research note: tight, dispassionate, 2-3 sentences max.
+1. Mechanism of action: 1-2 sentences, accurate, no marketing language.
+2. Indications: list approved US indications only.
+3. annualRevenueUSD: use the originator's most recent published 10-K figure for this product. If you cannot cite a specific 10-K page, omit the field — DO NOT guess.
+4. Every numeric claim and indication needs a citationId pointing into the citations array.
+5. Citations must reference real, verifiable sources (FDA Orange Book row, SEC 10-K with year and product-segment page, official prescribing information).
 
 Output the JSON object now.
 ```
+
+### Section 2 — Patent Timeline prompt (Pro, `responseSchema = PatentTimelineSchema + citations`)
+
+```
+You are a senior pharma BD analyst. Produce the "Patent Cliff Timeline" section of an Opportunity Dossier. Output MUST conform exactly to the provided JSON schema.
+
+Drug data (FDA Orange Book row, including all patents and exclusivity entries): {{drug_record}}
+
+Rules:
+1. Include ONE event per patent listed in the input (type = COMPOSITION_OF_MATTER, METHOD_OF_USE, or FORMULATION based on the patent's drugSubstance/drugProduct flags and known patent claims).
+2. If any patent has a pediatric extension, add a separate PEDIATRIC_EXTENSION event 6 months after that patent's expiry.
+3. Include exactly one PROJECTED_GENERIC_LAUNCH event = the LATEST of (composition-of-matter expiry + pediatric extension if applicable).
+4. loeWindowStart = earliest patent expiry. loeWindowEnd = projected generic launch date.
+5. narrative: 2-3 sentence analyst summary. Tight, dispassionate, like Goldman Sachs equity research. No marketing language.
+6. Every event needs a citationId pointing into the citations array; cite the FDA Orange Book row for that specific patent number.
+7. NEVER invent patent numbers or expiry dates not present in the input.
+
+Output the JSON object now.
+```
+
+### Triage prompt (Flash) — unchanged from above.
 
 ---
 
 ## 8. UI Spec
 
 ### Color & vibe
-Premium enterprise. Think Stripe Atlas meets Bloomberg Terminal. **Dark mode first** (judges' projectors look better dark). Off-white text on near-black bg, single accent color (suggest deep teal `#0d9488` or electric purple `#7c3aed`).
+Premium enterprise. Think Stripe Atlas meets Bloomberg Terminal. **Dark mode first** (judges' projectors look better dark). Off-white text on near-black bg, single accent color: **deep teal `#0d9488`**.
 
 ### Screens
 
@@ -298,17 +345,21 @@ A horizontal time axis from `today` to `loeWindowEnd + 1yr`. Each event = a colo
 
 ---
 
-## 9. The 36-Hour Solo Timeline
+## 9. The 10-Hour Solo Timeline
 
-| Block | Hours | Tasks | "Done" Definition |
-|---|---|---|---|
-| **Friday night setup** | 0–3 | `create-next-app`, install Tailwind + shadcn + `ai` + `@ai-sdk/google` + `zod` + `recharts`. Push to GitHub, deploy hello-world to Vercel. Get Gemini API key. Download Orange Book zip. Write & run `scripts/parse-orange-book.ts`. Commit `data/orange-book.json`. | Vercel URL is live; orange-book.json exists with Ibrance row. |
-| **Sat AM — Pipeline** | 3–10 | Write `lib/schema.ts` (Zod). Write `lib/prompts.ts`. Write `lib/pipeline.ts` (triage + synth). Write `scripts/test-pipeline.ts` to run end-to-end from CLI. Iterate prompts until output validates against schema 5x in a row. **DO NOT TOUCH THE UI YET.** | `tsx scripts/test-pipeline.ts` prints a clean Dossier JSON. |
-| **Sat afternoon — Static UI** | 10–18 | Build all 3 screens with hardcoded placeholder Dossier data. Make Dossier view *gorgeous*. Patent timeline rendered. Citations sidebar styled. | Click through Dashboard → Setup → Dossier with hardcoded data. Looks like a $1M product. |
-| **Sat night — Wire streaming** | 18–24 | Implement `app/api/scout/route.ts` with `streamObject`. Connect frontend via `useObject` hook from Vercel AI SDK. Sections render incrementally as Zod fields complete. | Form submit triggers real Gemini call; sections appear one by one in browser. |
-| **Sun AM — Cache the gold** | 24–28 | Run pipeline once, save output to `data/golden-dossier.json`. Add `DEMO_MODE` env flag. In demo mode, route streams the cached JSON with `setTimeout` to simulate timing. **Test the demo flow 3x.** | With `DEMO_MODE=true`, demo runs identically without hitting Gemini. |
-| **Sun midday — Polish + record** | 28–34 | Loading states. Error toast. Mobile breakpoints. Record a 90s screen-capture as backup-backup video. Final Vercel deploy with `DEMO_MODE=true`. | Recorded video exists. Production URL works on phone. |
-| **Sun final — Pitch** | 34–36 | Rehearse 3-min pitch out loud 5x. Time it. Print the script. | Can deliver pitch from memory. |
+> Hard rule: **do not start a block before the previous block's "Done" definition is met.** If you slip, cut from §14 stretch goals or simplify the Patent Timeline visualization first — never cut the cache (block 6).
+
+| # | Block | Hrs | Tasks | "Done" Definition |
+|---|---|---|---|---|
+| **1** | Scaffold | 0.0 – 1.0 | `npx create-next-app@latest` (TS, App Router, Tailwind, src/ no, app router yes). `npx shadcn@latest init` (teal accent). `npm i @google/genai zod`. Add `.env.local` with `GOOGLE_GENERATIVE_AI_API_KEY`. Write `lib/gemini.ts` with a one-line "hello gemini" helper. Run `npx tsx scripts/hello.ts` and confirm both `gemini-2.5-flash` and `gemini-2.5-pro` respond. Commit. | Both models respond from a Node script. shadcn is initialized with teal theme. |
+| **2** | Data | 1.0 – 2.0 | Download Orange Book zip → `data/_raw/`. Write `scripts/parse-orange-book.ts` to extract the Ibrance (NDA 207103) row + ~5 filler oncology drugs (e.g., Tagrisso, Keytruda, Verzenio, Lynparza, Calquence) into `data/orange-book.json`. Run it. Commit the JSON; gitignore `_raw/`. | `data/orange-book.json` exists, contains Ibrance with full patent + exclusivity arrays, plus 5 filler drugs. |
+| **3** | Schema + Prompts | 2.0 – 3.0 | Write `lib/schema.ts` exactly as in §6. Write `lib/prompts.ts` with the three prompts from §7. Write `lib/pipeline.ts` exposing `triage()`, `summarize()`, `timeline()`. | Files exist, no TS errors, prompts use `{{drug_record}}` interpolation. |
+| **4** | CLI test | 3.0 – 4.0 | Write `scripts/test-pipeline.ts` that runs all three steps end-to-end and prints the assembled Dossier. **Iterate prompts until output validates against `DossierSchema` 3x in a row.** Do not touch UI yet. | `npx tsx scripts/test-pipeline.ts` prints a valid Dossier JSON 3 runs in a row. |
+| **5** | Static UI | 4.0 – 7.0 | Build all 3 screens with hardcoded placeholder Dossier data imported from a fixture file. Make Dossier view *gorgeous* — that's what wins. Build `<PatentTimeline />` (hand-rolled SVG, time-box 60 min). Citations sidebar with sticky positioning. | Click through Dashboard → Setup → Dossier with hardcoded data. Looks like a $1M product on a 1080p projector. |
+| **6** | Wire pipeline | 7.0 – 8.5 | Implement `/api/scout/triage`, `/api/scout/summary`, `/api/scout/timeline`. Dossier page fires them sequentially with `useEffect`. Each section's "loading skeleton" → "rendered card" transition uses Tailwind's `animate-in fade-in slide-in-from-bottom-4` (or framer-motion if shadcn brings it). | Form submit hits real Gemini, sections appear one after another, citations populate sidebar. |
+| **7** | Cache the gold | 8.5 – 9.25 | Write `scripts/cache-golden.ts`: runs the pipeline once, saves to `data/golden-dossier.json`. Add `DEMO_MODE` env flag. Each `/api/scout/*` route checks the flag and returns cached slices with `setTimeout(250/1500/1800)` delays. **Test the demo flow 5x.** | With `DEMO_MODE=true`, demo runs identically without hitting Gemini. Tested 5 reloads in a row, no flicker. |
+| **8** | Record + polish | 9.25 – 10.0 | Set `DEMO_MODE=true`. Record a 90s screen capture as backup-backup. Loading skeletons. Error toast. Print the pitch script from §10. **Rehearse the pitch out loud 3x.** | Recorded MP4 exists on disk. Pitch fits in 3:00. |
+| **+** | Buffer / polish | 10.0+ | Use any remaining time for typography, micro-interactions, or one stretch goal from §14 (in priority order). | — |
 
 ---
 
@@ -348,16 +399,15 @@ A horizontal time axis from `today` to `loeWindowEnd + 1yr`. Each event = a colo
 
 ---
 
-## 12. Pre-Build Checklist (Friday Night)
+## 12. Pre-Build Checklist
 
-- [ ] Node 20+ installed
-- [ ] `pnpm` or `npm` ready
-- [ ] GitHub repo pushed (already at `c:\Users\Evan\github\BearHacks2026`)
-- [ ] Vercel account linked, project created, hello-world deployed
-- [ ] **Google AI Studio API key created** → save to `.env.local` as `GOOGLE_GENERATIVE_AI_API_KEY`
-- [ ] **Add a $5 ceiling on the API key** to avoid surprises and to bypass free-tier rate limits during dev
-- [ ] FDA Orange Book zip downloaded and extracted to `data/_raw_orange_book/` (gitignored)
-- [ ] `BUILD_PLAN.md` (this file) and `plans.md` both committed
+- [x] Repo exists at `c:\Users\Evan\github\BearHacks2026`
+- [x] Google AI Studio API key created, **paid tier enabled**, both `gemini-2.5-flash` and `gemini-2.5-pro` confirmed responding
+- [ ] Key saved to `.env.local` as `GOOGLE_GENERATIVE_AI_API_KEY` (and `.env.local` is gitignored)
+- [ ] Node 20+ installed (`node --version`)
+- [ ] FDA Orange Book zip downloaded → extracted to `data/_raw/` → `_raw/` added to `.gitignore`
+- [x] `BUILD_PLAN.md` (this file) and `plans.md` committed
+- [ ] Python venv (`.venv/`) added to `.gitignore` — was used only for key testing, not part of the app
 
 ---
 
@@ -366,7 +416,8 @@ A horizontal time axis from `today` to `loeWindowEnd + 1yr`. Each event = a colo
 | Risk | Probability | Mitigation |
 |---|---|---|
 | Gemini rate limits during dev | High | Paid key with $5 cap; fall back to cached pipeline outputs |
-| `streamObject` partial-state rendering flickers | Medium | Render section N only when its top-level Zod field passes `.safeParse()` |
+| Section-by-section calls feel sluggish (3 sequential roundtrips) | Medium | Fire `triage` and `summary` in parallel via `Promise.all` once you confirm triage doesn't gate summary; or just trust DEMO_MODE for the live demo |
+| `responseSchema` JSON output drifts from Zod schema | Medium | Validate every response with `.safeParse()` and on failure, retry once with the validation errors injected into the prompt |
 | Patent timeline rabbit-hole eats Saturday | Medium | 3-hour timebox. Hand-roll SVG if Recharts fights. Worst case: static pre-rendered image of the timeline. |
 | Live demo network fails on stage | Medium | `DEMO_MODE=true` deployed by default. 90s screen-recording as backup-backup. |
 | Solo dev hits a wall at 3am with no rubber duck | High | Commit early, commit often. Push to GitHub every 2 hours so progress is recoverable. |
@@ -395,16 +446,18 @@ When resuming cold, build in this exact order:
 4. `lib/prompts.ts`
 5. `lib/pipeline.ts`
 6. `scripts/test-pipeline.ts` ← iterate prompts here until JSON is clean
-7. `app/api/scout/route.ts`
-8. `components/DossierSection.tsx`
-9. `components/PatentTimeline.tsx`
-10. `components/CitationsSidebar.tsx`
-11. `app/scouts/[id]/page.tsx` ← the Dossier viewer (where the magic happens)
-12. `app/page.tsx` ← Dashboard
-13. `app/scouts/new/page.tsx` ← Setup form
-14. `data/golden-dossier.json` (via `scripts/cache-golden.ts`)
-15. `DEMO_MODE` toggle in `app/api/scout/route.ts`
-16. Polish pass
+7. `app/api/scout/triage/route.ts`
+8. `app/api/scout/summary/route.ts`
+9. `app/api/scout/timeline/route.ts`
+10. `components/DossierSection.tsx`
+11. `components/PatentTimeline.tsx`
+12. `components/CitationsSidebar.tsx`
+13. `app/scouts/[id]/page.tsx` ← the Dossier viewer (where the magic happens)
+14. `app/page.tsx` ← Dashboard
+15. `app/scouts/new/page.tsx` ← Setup form
+16. `data/golden-dossier.json` (via `scripts/cache-golden.ts`)
+17. `DEMO_MODE` toggle in all three `/api/scout/*` routes
+18. Polish pass
 
 ---
 
@@ -422,13 +475,16 @@ When resuming cold, build in this exact order:
 
 ---
 
-## 17. Open Questions (Resolve Before Building)
+## 17. Decisions Log (Resolved)
 
-- [ ] Confirm BearHacks 2026 official start time and submission deadline — does the 36-hour window match the event's schedule?
-- [ ] Confirm whether the event allows pre-existing scaffolding/boilerplate, or if all code must be written during the event window.
-- [ ] Confirm presentation format (live demo? recorded? slides + demo?).
-- [ ] Pick the accent color (teal `#0d9488` vs purple `#7c3aed`) — affects shadcn theme config.
+- [x] **Hackathon timing:** Already underway. ~10 hours of focused build, then polish & rehearse.
+- [x] **Presentation format:** Live demo, with a recorded screen capture as backup-backup.
+- [x] **Accent color:** Teal `#0d9488`.
+- [x] **Backend language:** TypeScript only — Next.js API routes calling `@google/genai` Node SDK directly. The Python venv was throwaway (key testing only).
+- [x] **Streaming approach:** Section-by-section reveal via three sequential API endpoints (no partial-JSON streaming, no Vercel AI SDK). For the demo, hardcoded golden-dossier cache replaces real Gemini calls but uses identical UI/animation timing.
+- [x] **Hosting:** Local only. No Vercel.
+- [x] **Gemini tier:** Paid tier active and confirmed working for both `gemini-2.5-flash` and `gemini-2.5-pro`. Free tier blocks Pro entirely (`limit: 0`).
 
 ---
 
-*Last updated: Saturday, April 25, 2026. Owned by: Evan (solo).*
+*Last updated: Saturday, April 25, 2026 — 10-hour build budget locked. Owned by: Evan (solo).*
