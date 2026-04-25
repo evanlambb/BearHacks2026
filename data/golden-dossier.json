@@ -1,0 +1,127 @@
+{
+  "generatedAt": "2026-04-25T16:44:36.866Z",
+  "filter": {
+    "therapeuticArea": "Oncology",
+    "moleculeType": "Small Molecule",
+    "loeWindowStart": "2027-01-01",
+    "loeWindowEnd": "2029-12-31",
+    "region": "United States"
+  },
+  "triage": {
+    "match": true,
+    "ndaNumber": "207103",
+    "ingredient": "PALBOCICLIB",
+    "tradeName": "IBRANCE",
+    "rationale": "IBRANCE matches the criteria because its primary patent expiry of 2027-03-05 falls within the 2027-01-01 to 2029-12-31 window, and it is a known blockbuster oncology small molecule."
+  },
+  "dossier": {
+    "drugSummary": {
+      "name": "Ibrance (palbociclib)",
+      "originator": "Pfizer Inc.",
+      "mechanismOfAction": "Ibrance is an inhibitor of cyclin-dependent kinases 4 and 6 (CDK4/6). By inhibiting these key regulators of the cell cycle, it can block the G1 to S phase transition, leading to a halt in cell proliferation.",
+      "indications": [
+        "For the treatment of adult patients with hormone receptor (HR)-positive, human epidermal growth factor receptor 2 (HER2)-negative advanced or metastatic breast cancer in combination with an aromatase inhibitor as initial endocrine-based therapy.",
+        "For the treatment of adult patients with HR-positive, HER2-negative advanced or metastatic breast cancer in combination with fulvestrant in patients with disease progression following endocrine therapy."
+      ],
+      "annualRevenueUSD": 4753000000,
+      "revenueYear": 2023,
+      "revenueCitationId": 3
+    },
+    "patentTimeline": {
+      "events": [
+        {
+          "type": "COMPOSITION_OF_MATTER",
+          "label": "Composition-of-matter (US RE47,739)",
+          "date": "2027-03-05",
+          "citationId": 4,
+          "notes": "Core patent covering the palbociclib molecule."
+        },
+        {
+          "type": "PEDIATRIC_EXTENSION",
+          "label": "Pediatric extension (+6 mo)",
+          "date": "2027-09-05",
+          "citationId": 4,
+          "notes": "Six-month pediatric extension applied to the core composition-of-matter patent."
+        },
+        {
+          "type": "EXCLUSIVITY",
+          "label": "Pediatric Exclusivity (M-14)",
+          "date": "2028-09-16",
+          "citationId": 6,
+          "notes": "Exclusivity for a new pediatric indication or use."
+        },
+        {
+          "type": "EXCLUSIVITY",
+          "label": "Pediatric Exclusivity (PED)",
+          "date": "2029-03-16",
+          "citationId": 7,
+          "notes": "Additional pediatric exclusivity period."
+        },
+        {
+          "type": "PROJECTED_GENERIC_LAUNCH",
+          "label": "Projected Generic Launch",
+          "date": "2029-03-16",
+          "citationId": 7,
+          "notes": "Generic entry is anticipated following the expiration of the final pediatric exclusivity period."
+        },
+        {
+          "type": "FORMULATION",
+          "label": "Formulation patent (US 10,723,730)",
+          "date": "2034-02-08",
+          "citationId": 5,
+          "notes": "Later-expiring patent covering a specific form or product."
+        },
+        {
+          "type": "PEDIATRIC_EXTENSION",
+          "label": "Pediatric extension (+6 mo)",
+          "date": "2034-08-08",
+          "citationId": 5,
+          "notes": "Six-month pediatric extension applied to the formulation patent."
+        }
+      ],
+      "loeWindowStart": "2027-03-05",
+      "loeWindowEnd": "2029-03-16",
+      "narrative": "Ibrance's market protection is anchored by its core composition-of-matter patent expiring in March 2027, which receives a six-month pediatric extension to September 2027 [1]. However, subsequent pediatric exclusivity periods provide the final barrier to entry, with the last one expiring in March 2029, defining the projected generic launch date [4]. A later-expiring patent extending to 2034 creates a patent thicket that may deter or complicate generic competition beyond this date [2]."
+    },
+    "citations": [
+      {
+        "id": 1,
+        "source": "FDA_ORANGE_BOOK",
+        "reference": "FDA Orange Book, NDA 207103 (Ibrance / palbociclib)",
+        "url": "https://www.accessdata.fda.gov/scripts/cder/ob/results_product.cfm?Appl_Type=N&Appl_No=207103"
+      },
+      {
+        "id": 2,
+        "source": "FDA_LABEL",
+        "reference": "Drugs@FDA: IBRANCE (palbociclib) prescribing information and approval history, NDA 207103",
+        "url": "https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=207103"
+      },
+      {
+        "id": 3,
+        "source": "SEC_10K",
+        "reference": "Pfizer Inc. 2023 Annual Report on Form 10-K, Selected Product Revenues (CIK 0000078003)",
+        "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000078003&type=10-K"
+      },
+      {
+        "id": 4,
+        "source": "FDA_ORANGE_BOOK",
+        "reference": "FDA Orange Book, NDA 207103, Patent RE47739"
+      },
+      {
+        "id": 5,
+        "source": "FDA_ORANGE_BOOK",
+        "reference": "FDA Orange Book, NDA 207103, Patent 10723730"
+      },
+      {
+        "id": 6,
+        "source": "FDA_ORANGE_BOOK",
+        "reference": "FDA Orange Book, NDA 207103, Exclusivity M-14"
+      },
+      {
+        "id": 7,
+        "source": "FDA_ORANGE_BOOK",
+        "reference": "FDA Orange Book, NDA 207103, Exclusivity PED"
+      }
+    ]
+  }
+}

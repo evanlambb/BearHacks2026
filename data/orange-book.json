@@ -1,0 +1,522 @@
+{
+  "sourcedFrom": "FDA Orange Book — https://www.fda.gov/drugs/drug-approvals-and-databases/orange-book-data-files",
+  "generatedAt": "2026-04-25T15:59:40.280Z",
+  "heroNda": "207103",
+  "drugs": [
+    {
+      "ndaNumber": "207103",
+      "applicationType": "N",
+      "ingredient": "PALBOCICLIB",
+      "tradeName": "IBRANCE",
+      "applicant": "PFIZER",
+      "applicantFullName": "PFIZER INC",
+      "dosageForm": "CAPSULE;ORAL",
+      "strengths": [
+        "75MG",
+        "100MG",
+        "125MG"
+      ],
+      "approvalDates": [
+        "2015-02-03"
+      ],
+      "patents": [
+        {
+          "patentNumber": "RE47739",
+          "expiryDate": "2027-03-05",
+          "expiryDateRaw": "Mar 5, 2027",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2019-12-19"
+        },
+        {
+          "patentNumber": "RE47739*PED",
+          "expiryDate": "2027-09-05",
+          "expiryDateRaw": "Sep 5, 2027",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": ""
+        },
+        {
+          "patentNumber": "10723730",
+          "expiryDate": "2034-02-08",
+          "expiryDateRaw": "Feb 8, 2034",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2020-08-27"
+        },
+        {
+          "patentNumber": "10723730*PED",
+          "expiryDate": "2034-08-08",
+          "expiryDateRaw": "Aug 8, 2034",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": ""
+        }
+      ],
+      "exclusivity": [
+        {
+          "code": "M-14",
+          "expiryDate": "2028-09-16",
+          "expiryDateRaw": "Sep 16, 2028"
+        },
+        {
+          "code": "PED",
+          "expiryDate": "2029-03-16",
+          "expiryDateRaw": "Mar 16, 2029"
+        }
+      ]
+    },
+    {
+      "ndaNumber": "208065",
+      "applicationType": "N",
+      "ingredient": "OSIMERTINIB MESYLATE",
+      "tradeName": "TAGRISSO",
+      "applicant": "ASTRAZENECA",
+      "applicantFullName": "ASTRAZENECA PHARMACEUTICALS LP",
+      "dosageForm": "TABLET;ORAL",
+      "strengths": [
+        "EQ 40MG BASE",
+        "EQ 80MG BASE"
+      ],
+      "approvalDates": [
+        "2015-11-13"
+      ],
+      "patents": [
+        {
+          "patentNumber": "9732058",
+          "expiryDate": "2032-07-25",
+          "expiryDateRaw": "Jul 25, 2032",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "U-1777",
+          "delisted": false,
+          "submissionDate": "2017-08-29"
+        },
+        {
+          "patentNumber": "11524951",
+          "expiryDate": "2032-07-25",
+          "expiryDateRaw": "Jul 25, 2032",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2023-01-11"
+        },
+        {
+          "patentNumber": "8946235",
+          "expiryDate": "2032-08-08",
+          "expiryDateRaw": "Aug 8, 2032",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "U-1777",
+          "delisted": false,
+          "submissionDate": "2015-12-11"
+        },
+        {
+          "patentNumber": "10183020",
+          "expiryDate": "2035-01-02",
+          "expiryDateRaw": "Jan 2, 2035",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "U-1777",
+          "delisted": false,
+          "submissionDate": "2019-02-12"
+        },
+        {
+          "patentNumber": "12465608",
+          "expiryDate": "2042-11-26",
+          "expiryDateRaw": "Nov 26, 2042",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-3823",
+          "delisted": false,
+          "submissionDate": "2025-12-10"
+        }
+      ],
+      "exclusivity": [
+        {
+          "code": "I-941",
+          "expiryDate": "2027-02-16",
+          "expiryDateRaw": "Feb 16, 2027"
+        },
+        {
+          "code": "I-952",
+          "expiryDate": "2027-09-25",
+          "expiryDateRaw": "Sep 25, 2027"
+        },
+        {
+          "code": "ODE-337",
+          "expiryDate": "2027-12-18",
+          "expiryDateRaw": "Dec 18, 2027"
+        }
+      ]
+    },
+    {
+      "ndaNumber": "208716",
+      "applicationType": "N",
+      "ingredient": "ABEMACICLIB",
+      "tradeName": "VERZENIO",
+      "applicant": "ELI LILLY AND CO",
+      "applicantFullName": "ELI LILLY AND CO",
+      "dosageForm": "TABLET;ORAL",
+      "strengths": [
+        "50MG",
+        "100MG",
+        "150MG",
+        "200MG"
+      ],
+      "approvalDates": [
+        "2017-09-28"
+      ],
+      "patents": [
+        {
+          "patentNumber": "7855211",
+          "expiryDate": "2031-09-28",
+          "expiryDateRaw": "Sep 28, 2031",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "U-2135",
+          "delisted": false,
+          "submissionDate": "2017-10-16"
+        }
+      ],
+      "exclusivity": []
+    },
+    {
+      "ndaNumber": "208558",
+      "applicationType": "N",
+      "ingredient": "OLAPARIB",
+      "tradeName": "LYNPARZA",
+      "applicant": "ASTRAZENECA",
+      "applicantFullName": "ASTRAZENECA PHARMACEUTICALS LP",
+      "dosageForm": "TABLET;ORAL",
+      "strengths": [
+        "100MG",
+        "150MG"
+      ],
+      "approvalDates": [
+        "2017-08-17"
+      ],
+      "patents": [
+        {
+          "patentNumber": "8143241",
+          "expiryDate": "2027-08-12",
+          "expiryDateRaw": "Aug 12, 2027",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-2482",
+          "delisted": false,
+          "submissionDate": "2017-09-15"
+        },
+        {
+          "patentNumber": "8071579",
+          "expiryDate": "2027-08-12",
+          "expiryDateRaw": "Aug 12, 2027",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-3631",
+          "delisted": false,
+          "submissionDate": "2020-06-18"
+        },
+        {
+          "patentNumber": "7449464",
+          "expiryDate": "2027-09-08",
+          "expiryDateRaw": "Sep 8, 2027",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2017-09-15"
+        },
+        {
+          "patentNumber": "11975001",
+          "expiryDate": "2029-10-07",
+          "expiryDateRaw": "Oct 7, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2024-06-03"
+        },
+        {
+          "patentNumber": "11633396",
+          "expiryDate": "2029-10-07",
+          "expiryDateRaw": "Oct 7, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2023-05-19"
+        },
+        {
+          "patentNumber": "12048695",
+          "expiryDate": "2029-10-07",
+          "expiryDateRaw": "Oct 7, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2024-08-23"
+        },
+        {
+          "patentNumber": "12178816",
+          "expiryDate": "2029-10-07",
+          "expiryDateRaw": "Oct 7, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2025-01-24"
+        },
+        {
+          "patentNumber": "12144810",
+          "expiryDate": "2029-10-07",
+          "expiryDateRaw": "Oct 7, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2024-12-10"
+        },
+        {
+          "patentNumber": "8475842",
+          "expiryDate": "2029-12-31",
+          "expiryDateRaw": "Dec 31, 2029",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2017-09-15"
+        },
+        {
+          "patentNumber": "8859562",
+          "expiryDate": "2031-08-04",
+          "expiryDateRaw": "Aug 4, 2031",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-2101",
+          "delisted": false,
+          "submissionDate": "2017-09-15"
+        },
+        {
+          "patentNumber": "11970530",
+          "expiryDate": "2041-10-25",
+          "expiryDateRaw": "Oct 25, 2041",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-3929",
+          "delisted": false,
+          "submissionDate": "2024-05-28"
+        }
+      ],
+      "exclusivity": [
+        {
+          "code": "I-914",
+          "expiryDate": "2026-05-31",
+          "expiryDateRaw": "May 31, 2026"
+        },
+        {
+          "code": "ODE-283",
+          "expiryDate": "2026-12-27",
+          "expiryDateRaw": "Dec 27, 2026"
+        },
+        {
+          "code": "ODE-306",
+          "expiryDate": "2027-05-08",
+          "expiryDateRaw": "May 8, 2027"
+        }
+      ]
+    },
+    {
+      "ndaNumber": "210259",
+      "applicationType": "N",
+      "ingredient": "ACALABRUTINIB",
+      "tradeName": "CALQUENCE",
+      "applicant": "ASTRAZENECA",
+      "applicantFullName": "ASTRAZENECA UK LTD",
+      "dosageForm": "CAPSULE;ORAL",
+      "strengths": [
+        "100MG"
+      ],
+      "approvalDates": [
+        "2017-10-31"
+      ],
+      "patents": [
+        {
+          "patentNumber": "7459554",
+          "expiryDate": "2026-11-24",
+          "expiryDateRaw": "Nov 24, 2026",
+          "drugSubstance": true,
+          "drugProduct": false,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2018-04-13"
+        },
+        {
+          "patentNumber": "10239883",
+          "expiryDate": "2032-07-11",
+          "expiryDateRaw": "Jul 11, 2032",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-2668",
+          "delisted": false,
+          "submissionDate": "2019-12-12"
+        },
+        {
+          "patentNumber": "9758524",
+          "expiryDate": "2032-07-11",
+          "expiryDateRaw": "Jul 11, 2032",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-4108",
+          "delisted": false,
+          "submissionDate": "2017-11-28"
+        },
+        {
+          "patentNumber": "9290504",
+          "expiryDate": "2032-07-11",
+          "expiryDateRaw": "Jul 11, 2032",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2017-11-28"
+        },
+        {
+          "patentNumber": "10272083",
+          "expiryDate": "2035-01-21",
+          "expiryDateRaw": "Jan 21, 2035",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-2519",
+          "delisted": false,
+          "submissionDate": "2019-05-22"
+        },
+        {
+          "patentNumber": "11771696",
+          "expiryDate": "2035-01-21",
+          "expiryDateRaw": "Jan 21, 2035",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-3710",
+          "delisted": false,
+          "submissionDate": "2023-10-30"
+        },
+        {
+          "patentNumber": "11166951",
+          "expiryDate": "2035-08-11",
+          "expiryDateRaw": "Aug 11, 2035",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-4426",
+          "delisted": false,
+          "submissionDate": "2026-03-18"
+        },
+        {
+          "patentNumber": "9796721",
+          "expiryDate": "2036-07-01",
+          "expiryDateRaw": "Jul 1, 2036",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "U-2145",
+          "delisted": false,
+          "submissionDate": "2017-11-28"
+        },
+        {
+          "patentNumber": "10167291",
+          "expiryDate": "2036-07-01",
+          "expiryDateRaw": "Jul 1, 2036",
+          "drugSubstance": false,
+          "drugProduct": true,
+          "patentUseCode": "U-2667",
+          "delisted": false,
+          "submissionDate": "2019-01-24"
+        }
+      ],
+      "exclusivity": [
+        {
+          "code": "ODE-274",
+          "expiryDate": "2026-11-21",
+          "expiryDateRaw": "Nov 21, 2026"
+        },
+        {
+          "code": "I-960",
+          "expiryDate": "2028-01-16",
+          "expiryDateRaw": "Jan 16, 2028"
+        }
+      ]
+    },
+    {
+      "ndaNumber": "203415",
+      "applicationType": "N",
+      "ingredient": "ENZALUTAMIDE",
+      "tradeName": "XTANDI",
+      "applicant": "ASTELLAS",
+      "applicantFullName": "ASTELLAS PHARMA US INC",
+      "dosageForm": "CAPSULE;ORAL",
+      "strengths": [
+        "40MG"
+      ],
+      "approvalDates": [
+        "2012-08-31"
+      ],
+      "patents": [
+        {
+          "patentNumber": "9126941",
+          "expiryDate": "2026-05-15",
+          "expiryDateRaw": "May 15, 2026",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-2345",
+          "delisted": false,
+          "submissionDate": "2015-10-07"
+        },
+        {
+          "patentNumber": "8183274",
+          "expiryDate": "2026-08-24",
+          "expiryDateRaw": "Aug 24, 2026",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-1281",
+          "delisted": false,
+          "submissionDate": "2012-09-27"
+        },
+        {
+          "patentNumber": "7709517",
+          "expiryDate": "2027-08-13",
+          "expiryDateRaw": "Aug 13, 2027",
+          "drugSubstance": true,
+          "drugProduct": true,
+          "patentUseCode": "",
+          "delisted": false,
+          "submissionDate": "2012-09-27"
+        },
+        {
+          "patentNumber": "12161628",
+          "expiryDate": "2037-02-23",
+          "expiryDateRaw": "Feb 23, 2037",
+          "drugSubstance": false,
+          "drugProduct": false,
+          "patentUseCode": "U-4101",
+          "delisted": false,
+          "submissionDate": "2025-01-08"
+        }
+      ],
+      "exclusivity": [
+        {
+          "code": "I-926",
+          "expiryDate": "2026-11-17",
+          "expiryDateRaw": "Nov 17, 2026"
+        }
+      ]
+    }
+  ]
+}
