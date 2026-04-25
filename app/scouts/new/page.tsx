@@ -34,9 +34,23 @@ export default function NewScoutPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    // For Block 5 we just navigate. Block 6 will trigger the real pipeline
-    // by passing the filter through and the dossier page will fetch sections.
-    router.push("/scouts/demo");
+    const filter = {
+      therapeuticArea,
+      moleculeType,
+      loeWindowStart: loeStart,
+      loeWindowEnd: loeEnd,
+      region,
+    };
+    try {
+      window.sessionStorage.setItem(
+        "pharma-scout:filter",
+        JSON.stringify(filter)
+      );
+    } catch {
+      // sessionStorage unavailable (private mode etc.) — dossier page will
+      // fall back to its default filter.
+    }
+    router.push("/scouts/run");
   }
 
   return (
