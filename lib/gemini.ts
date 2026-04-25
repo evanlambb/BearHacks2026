@@ -1,9 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+const apiKey =
+  process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 if (!apiKey) {
   throw new Error(
-    "GOOGLE_GENERATIVE_AI_API_KEY is not set. Add it to .env.local and run scripts with `npm run script <path>`."
+    "GEMINI_API_KEY is not set. Add it to .env.local and run scripts with `npm run script <path>`."
   );
 }
 
