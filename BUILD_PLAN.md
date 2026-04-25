@@ -422,6 +422,7 @@ A horizontal time axis from `today` to `loeWindowEnd + 1yr`. Each event = a colo
 | Live demo network fails on stage | Medium | `DEMO_MODE=true` deployed by default. 90s screen-recording as backup-backup. |
 | Solo dev hits a wall at 3am with no rubber duck | High | Commit early, commit often. Push to GitHub every 2 hours so progress is recoverable. |
 | Output sounds generic / not pharma-credible | Medium | Read 2 sample equity research notes on Ibrance Friday before bed; mirror their tone in the synthesis prompt. |
+| **LLM hallucinates citation URLs (404 on click)** | **High** | **Fixed in lib/prompts.ts: summary prompt now restricts URLs to a whitelist of stable search/browse endpoints (Drugs@FDA, SEC EDGAR, Orange Book product search). Never deep-link to specific PDFs. Golden dossier URLs hand-verified live.** |
 
 ---
 
