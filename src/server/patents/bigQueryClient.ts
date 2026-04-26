@@ -242,16 +242,6 @@ export class BigQueryPatentClient {
               LIMIT 1
             ) AS abstract,
             ARRAY(
-              SELECT DISTINCT i.name
-              FROM UNNEST(inventor_harmonized) i
-              WHERE i.name IS NOT NULL
-            ) AS inventors,
-            ARRAY(
-              SELECT DISTINCT a.name
-              FROM UNNEST(assignee_harmonized) a
-              WHERE a.name IS NOT NULL
-            ) AS applicants,
-            ARRAY(
               SELECT DISTINCT i.code
               FROM UNNEST(ipc) i
               WHERE i.code IS NOT NULL
@@ -260,7 +250,43 @@ export class BigQueryPatentClient {
               SELECT DISTINCT c.code
               FROM UNNEST(cpc) c
               WHERE c.code IS NOT NULL
-            ) AS cpc_codes
+            ) AS cpc_codes,
+            CASE
+              WHEN ARRAY_LENGTH(
+                ARRAY(
+                  SELECT DISTINCT a.name
+                  FROM UNNEST(assignee_harmonized) a
+                  WHERE a.name IS NOT NULL
+                )
+              ) > 0 THEN ARRAY(
+                SELECT DISTINCT a.name
+                FROM UNNEST(assignee_harmonized) a
+                WHERE a.name IS NOT NULL
+              )
+              ELSE ARRAY(
+                SELECT DISTINCT a
+                FROM UNNEST(assignee) a
+                WHERE a IS NOT NULL
+              )
+            END AS applicants,
+            CASE
+              WHEN ARRAY_LENGTH(
+                ARRAY(
+                  SELECT DISTINCT i.name
+                  FROM UNNEST(inventor_harmonized) i
+                  WHERE i.name IS NOT NULL
+                )
+              ) > 0 THEN ARRAY(
+                SELECT DISTINCT i.name
+                FROM UNNEST(inventor_harmonized) i
+                WHERE i.name IS NOT NULL
+              )
+              ELSE ARRAY(
+                SELECT DISTINCT i
+                FROM UNNEST(inventor) i
+                WHERE i IS NOT NULL
+              )
+            END AS inventors
           FROM \`${this.publicationsTable}\`
           WHERE publication_date >= @minPublicationDate
             AND (
