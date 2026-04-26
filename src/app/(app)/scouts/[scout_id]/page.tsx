@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 
 import { requireUser } from "@/lib/auth";
 import { StatusActions } from "./status-actions";
+import { LiveRunPanel } from "./live-run-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -162,6 +163,12 @@ export default async function ScoutDetailPage({
           </div>
         )}
       </section>
+
+      <LiveRunPanel
+        scoutId={scout.id}
+        initialLatestRun={latestRun}
+        initialReportCounts={reportStatusCounts}
+      />
 
       <section className="surface p-4" data-testid="scout-pipeline-stepper">
         <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">

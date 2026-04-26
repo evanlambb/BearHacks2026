@@ -81,7 +81,7 @@ export default async function AppLayout({
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--color-brand)]" />
             <span className="text-[22px] font-semibold leading-none tracking-tight">
-              Scout
+              Scoutent
             </span>
           </Link>
 
@@ -96,7 +96,7 @@ export default async function AppLayout({
 
       <footer className="border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
         <div className="mx-auto flex h-11 w-full max-w-[1360px] items-center justify-between px-6 text-[11px] text-[color:var(--color-ink-subtle)]">
-          <span>Patent Scout · WIPO + EPO ingestion · 6h cadence</span>
+          <span>Scoutent · WIPO + EPO ingestion · 6h cadence</span>
           <span className="mono">{user.id.slice(0, 8)}</span>
         </div>
       </footer>

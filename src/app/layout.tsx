@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Patent Scout",
+  title: "Scoutent",
   description:
     "Continuous patent scouting for drug opportunities. Surface generic-eligible molecules and unfiled-region windows before competitors do.",
 };
