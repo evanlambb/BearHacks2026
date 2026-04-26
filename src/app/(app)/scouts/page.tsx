@@ -178,6 +178,9 @@ function StatusPill({ status }: { status: string }) {
     <span
       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${map[status] ?? ""}`}
     >
+      {status === "active" ? (
+        <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-[color:var(--color-success)]" />
+      ) : null}
       {status}
     </span>
   );

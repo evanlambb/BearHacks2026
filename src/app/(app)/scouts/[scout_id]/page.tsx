@@ -41,6 +41,14 @@ export default async function ScoutDetailPage({
     .limit(1)
     .maybeSingle();
 
+  const reportStatusCounts = {
+    pending: (reports ?? []).filter((r) => r.report_status === "pending").length,
+    generating: (reports ?? []).filter((r) => r.report_status === "generating")
+      .length,
+    complete: (reports ?? []).filter((r) => r.report_status === "complete").length,
+    error: (reports ?? []).filter((r) => r.report_status === "error").length,
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -153,6 +161,16 @@ export default async function ScoutDetailPage({
             No run recorded yet.
           </div>
         )}
+      </section>
+
+      <section className="surface p-4" data-testid="scout-pipeline-stepper">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+          Pipeline progress
+        </div>
+        <PipelineStepper
+          latestRun={latestRun}
+          reportStatusCounts={reportStatusCounts}
+        />
       </section>
 
       <section>
@@ -311,4 +329,110 @@ function generatedFallbackName(scout: {
   patent_signal_type: string;
 }) {
   return `${scout.therapeutic_area} · ${scout.modality} · ${readableSignal(scout.patent_signal_type)}`;
+}
+
+function PipelineStepper({
+  latestRun,
+  reportStatusCounts,
+}: {
+  latestRun:
+    | {
+        status: string;
+        patents_reviewed: number;
+        opportunities_found: number;
+        started_at: string;
+        finished_at: string | null;
+        error_message: string | null;
+      }
+    | null;
+  reportStatusCounts: {
+    pending: number;
+    generating: number;
+    complete: number;
+    error: number;
+  };
+}) {
+  const steps = [
+    "Ingest patents",
+    "Run AI matching",
+    "Deep research",
+    "Generate reports",
+    "Finalize output",
+  ];
+
+  const currentIndex = deriveCurrentStep(latestRun, reportStatusCounts);
+  const hasError =
+    latestRun?.status === "error" || reportStatusCounts.error > 0;
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+        {steps.map((step, idx) => {
+          const state = hasError
+            ? idx <= currentIndex
+              ? "error"
+              : "upcoming"
+            : idx < currentIndex
+              ? "complete"
+              : idx === currentIndex
+                ? "current"
+                : "upcoming";
+          return (
+            <div
+              key={step}
+              className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-3 py-2"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className={
+                    state === "complete"
+                      ? "inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--color-success)]"
+                      : state === "current"
+                        ? "inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--color-accent)]"
+                        : state === "error"
+                          ? "inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--color-danger)]"
+                          : "inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--color-border-strong)]"
+                  }
+                />
+                <span className="text-[12px] font-medium text-[color:var(--color-ink)]">
+                  {step}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-[12px] text-[color:var(--color-ink-muted)]">
+        {hasError
+          ? "Pipeline hit an error. Check latest run details below."
+          : latestRun?.status === "running"
+            ? "Pipeline is running now. Steps update automatically as work progresses."
+            : latestRun?.status === "complete"
+              ? "Latest pipeline run completed successfully."
+              : "Waiting for next pipeline run."}
+      </p>
+    </div>
+  );
+}
+
+function deriveCurrentStep(
+  latestRun: {
+    status: string;
+    patents_reviewed: number;
+  } | null,
+  reportStatusCounts: {
+    pending: number;
+    generating: number;
+    complete: number;
+    error: number;
+  },
+) {
+  if (!latestRun) return 0;
+  if (latestRun.status === "error") return 3;
+  if (latestRun.status === "complete") return 4;
+  if (latestRun.patents_reviewed <= 0) return 0;
+  if (reportStatusCounts.pending > 0) return 1;
+  if (reportStatusCounts.generating > 0) return 3;
+  return 2;
 }

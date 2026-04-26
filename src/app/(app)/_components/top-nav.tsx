@@ -32,8 +32,8 @@ export function TopNav({ email }: { email: string }) {
               className={cn(
                 "relative inline-flex h-9 items-center rounded-[var(--radius-md)] px-3.5 text-[14px] font-medium transition-colors",
                 active
-                  ? "bg-white/10 text-[color:var(--color-nav-ink)]"
-                  : "text-[color:var(--color-nav-ink-muted)] hover:bg-white/5 hover:text-[color:var(--color-nav-ink)]",
+                  ? "bg-[color:var(--color-surface-muted)] text-[color:var(--color-ink)]"
+                  : "text-[color:var(--color-ink-muted)] hover:bg-[color:var(--color-surface-muted)] hover:text-[color:var(--color-ink)]",
               )}
             >
               {item.label}
@@ -58,15 +58,15 @@ export function TopNav({ email }: { email: string }) {
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             onBlur={() => setTimeout(() => setMenuOpen(false), 120)}
-            className="btn btn-nav h-9 gap-2 pl-1 pr-2"
+            className="btn btn-secondary h-9 gap-2 pl-1 pr-2"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
             <Avatar email={email} />
-            <span className="hidden text-[13px] text-[color:var(--color-nav-ink)] lg:inline">
+            <span className="hidden text-[13px] text-[color:var(--color-ink)] lg:inline">
               {email}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[color:var(--color-nav-ink-muted)]" />
+            <ChevronDown className="h-3.5 w-3.5 text-[color:var(--color-ink-subtle)]" />
           </button>
 
           {menuOpen ? (
@@ -102,7 +102,7 @@ export function TopNav({ email }: { email: string }) {
 function Avatar({ email }: { email: string }) {
   const initial = (email[0] ?? "?").toUpperCase();
   return (
-    <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-brand)]/30 text-[11px] font-semibold text-[color:var(--color-nav-ink)]">
+    <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-accent-muted)] text-[11px] font-semibold text-[color:var(--color-accent)]">
       {initial}
     </span>
   );

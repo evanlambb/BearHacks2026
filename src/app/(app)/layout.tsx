@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireUser } from "@/lib/auth";
+import { LiveRunBanner } from "./_components/live-run-banner";
 import { TopNav } from "./_components/top-nav";
 
 export default async function AppLayout({
@@ -8,8 +9,70 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireUser();
+  const { user, supabase } = await requireUser();
   const email = user.email ?? "";
+
+  const { data: runningRuns } = await supabase
+    .from("scout_runs")
+    .select("id, scout_id, started_at, patents_reviewed")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(5);
+
+  const primaryRun = runningRuns?.[0];
+
+  let bannerData:
+    | {
+        runCount: number;
+        scoutName: string;
+        startedAt: string;
+        patentsReviewed: number;
+        reportsGenerating: number;
+        reportsComplete: number;
+        isStale: boolean;
+      }
+    | null = null;
+
+  if (primaryRun?.scout_id) {
+    const [scoutRes, reportsRes] = await Promise.all([
+      supabase
+        .from("scouts")
+        .select("name, therapeutic_area")
+        .eq("id", primaryRun.scout_id)
+        .maybeSingle(),
+      supabase
+        .from("opportunity_reports")
+        .select("report_status")
+        .eq("scout_id", primaryRun.scout_id),
+    ]);
+
+    const scoutName =
+      scoutRes.data?.name?.trim() ||
+      scoutRes.data?.therapeutic_area ||
+      "Active scout";
+
+    const reportRows = reportsRes.data ?? [];
+    const reportsGenerating = reportRows.filter(
+      (r) => r.report_status === "generating",
+    ).length;
+    const reportsComplete = reportRows.filter(
+      (r) => r.report_status === "complete",
+    ).length;
+    const startedAtMs = new Date(primaryRun.started_at).getTime();
+    const isStale =
+      !Number.isNaN(startedAtMs) &&
+      Date.now() - startedAtMs > 15 * 60 * 1000;
+
+    bannerData = {
+      runCount: runningRuns?.length ?? 1,
+      scoutName,
+      startedAt: primaryRun.started_at,
+      patentsReviewed: primaryRun.patents_reviewed ?? 0,
+      reportsGenerating,
+      reportsComplete,
+      isStale,
+    };
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--color-bg)]">
@@ -27,6 +90,7 @@ export default async function AppLayout({
       </header>
 
       <main className="mx-auto w-full max-w-[1360px] flex-1 px-6 py-8">
+        {bannerData ? <LiveRunBanner {...bannerData} /> : null}
         {children}
       </main>
 
