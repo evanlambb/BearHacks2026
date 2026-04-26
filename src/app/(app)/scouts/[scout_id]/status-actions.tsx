@@ -1,3 +1,7 @@
+"use client";
+
+import { useFormStatus } from "react-dom";
+
 import { pauseScoutAction, resumeScoutAction } from "./actions";
 import { runScoutNowAction } from "./actions";
 
@@ -10,13 +14,12 @@ export function StatusActions({
 }) {
   const runNowForm = (
     <form action={runScoutNowAction.bind(null, scoutId)}>
-      <button
-        type="submit"
+      <SubmitButton
+        idleLabel="Run now"
+        pendingLabel="Running..."
         className="btn btn-primary"
-        data-testid="run-scout-now-button"
-      >
-        Run now
-      </button>
+        testId="run-scout-now-button"
+      />
     </form>
   );
 
@@ -25,13 +28,12 @@ export function StatusActions({
       <div className="flex items-center gap-2">
         {runNowForm}
         <form action={resumeScoutAction.bind(null, scoutId)}>
-          <button
-            type="submit"
+          <SubmitButton
+            idleLabel="Resume scout"
+            pendingLabel="Resuming..."
             className="btn btn-secondary"
-            data-testid="resume-scout-button"
-          >
-            Resume scout
-          </button>
+            testId="resume-scout-button"
+          />
         </form>
       </div>
     );
@@ -41,14 +43,38 @@ export function StatusActions({
     <div className="flex items-center gap-2">
       {runNowForm}
       <form action={pauseScoutAction.bind(null, scoutId)}>
-        <button
-          type="submit"
+        <SubmitButton
+          idleLabel="Pause scout"
+          pendingLabel="Pausing..."
           className="btn btn-secondary"
-          data-testid="pause-scout-button"
-        >
-          Pause scout
-        </button>
+          testId="pause-scout-button"
+        />
       </form>
     </div>
+  );
+}
+
+function SubmitButton({
+  idleLabel,
+  pendingLabel,
+  className,
+  testId,
+}: {
+  idleLabel: string;
+  pendingLabel: string;
+  className: string;
+  testId: string;
+}) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      className={className}
+      data-testid={testId}
+      disabled={pending}
+      aria-busy={pending}
+    >
+      {pending ? pendingLabel : idleLabel}
+    </button>
   );
 }

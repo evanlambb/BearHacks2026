@@ -33,6 +33,14 @@ export default async function ScoutDetailPage({
     .order("created_at", { ascending: false })
     .limit(50);
 
+  const { data: latestRun } = await supabase
+    .from("scout_runs")
+    .select("status, started_at, finished_at, patents_reviewed, opportunities_found, error_message")
+    .eq("scout_id", scout.id)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   return (
     <div className="space-y-6">
       <div>
@@ -113,6 +121,38 @@ export default async function ScoutDetailPage({
           value={formatDateTime(scout.next_run_at)}
           mono
         />
+      </section>
+
+      <section className="surface p-4" data-testid="scout-latest-run">
+        <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
+          Latest run
+        </div>
+        {latestRun ? (
+          <div className="mt-2 space-y-1.5 text-[13px]">
+            <div className="flex items-center gap-2">
+              <StatusPill status={latestRun.status} />
+              <span className="mono text-[color:var(--color-ink-muted)]">
+                Started {formatDateTime(latestRun.started_at)}
+              </span>
+            </div>
+            <div className="text-[color:var(--color-ink-muted)]">
+              Patents reviewed: {latestRun.patents_reviewed} · Opportunities found:{" "}
+              {latestRun.opportunities_found}
+            </div>
+            <div className="mono text-[12px] text-[color:var(--color-ink-subtle)]">
+              Finished {formatDateTime(latestRun.finished_at)}
+            </div>
+            {latestRun.error_message ? (
+              <div className="text-[12px] text-[color:var(--color-danger)]">
+                {latestRun.error_message}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-2 text-[13px] text-[color:var(--color-ink-muted)]">
+            No run recorded yet.
+          </div>
+        )}
       </section>
 
       <section>
@@ -223,6 +263,8 @@ function StatusPill({ status }: { status: string }) {
     pending:
       "text-[color:var(--color-ink-muted)] border-[color:var(--color-border-strong)] bg-[color:var(--color-surface-muted)]",
     generating:
+      "text-[color:var(--color-warning)] border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/8",
+    running:
       "text-[color:var(--color-warning)] border-[color:var(--color-warning)]/30 bg-[color:var(--color-warning)]/8",
     error:
       "text-[color:var(--color-danger)] border-[color:var(--color-danger)]/30 bg-[color:var(--color-danger)]/8",

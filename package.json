@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^8.1.1",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.45.4",
     "@tailwindcss/postcss": "^4.2.4",

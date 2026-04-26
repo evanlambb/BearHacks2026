@@ -10,7 +10,8 @@ import type {
 } from "../../lib/supabase";
 import { buildMatchPatentPrompt } from "./prompts/matchPatent";
 
-const DEFAULT_MODEL = "gemini-3.1-flash-lite";
+const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_FALLBACK_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
 
 export type PatentMatchDecision = {
   match: boolean;
@@ -84,20 +85,21 @@ function parseDecision(text: string): PatentMatchDecision {
 export class GeminiClient implements IGeminiClient {
   private readonly apiKey: string | undefined;
   private readonly model: string;
+  private readonly fallbackModels: string[];
   private readonly fetchImpl: typeof fetch;
 
   constructor(opts: { apiKey?: string; model?: string; fetchImpl?: typeof fetch } = {}) {
     this.apiKey = opts.apiKey ?? process.env.GEMINI_API_KEY;
     this.model = opts.model ?? process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
+    this.fallbackModels = (process.env.GEMINI_FALLBACK_MODELS ?? "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
     this.fetchImpl = opts.fetchImpl ?? fetch;
   }
 
-  async matchPatent(prompt: string): Promise<PatentMatchDecision> {
-    if (!this.apiKey) throw new Error("GEMINI_API_KEY is not set");
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      this.model,
-    )}:generateContent?key=${encodeURIComponent(this.apiKey)}`;
+  private async callModel(prompt: string, model: string): Promise<PatentMatchDecision> {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(this.apiKey!)}`;
 
     const response = await this.fetchImpl(endpoint, {
       method: "POST",
@@ -111,13 +113,36 @@ export class GeminiClient implements IGeminiClient {
       }),
     });
 
-    if (!response.ok) throw new Error(`Gemini error ${response.status}`);
+    if (!response.ok) throw new Error(`Gemini error ${response.status} (model=${model})`);
     const payload = (await response.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
     };
     const text = payload.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("\n").trim();
     if (!text) throw new Error("Gemini response missing text");
     return parseDecision(text);
+  }
+
+  async matchPatent(prompt: string): Promise<PatentMatchDecision> {
+    if (!this.apiKey) throw new Error("GEMINI_API_KEY is not set");
+
+    const models = [
+      this.model,
+      ...this.fallbackModels,
+      ...DEFAULT_FALLBACK_MODELS,
+    ].filter((v, i, arr) => arr.indexOf(v) === i);
+
+    let lastError: Error | null = null;
+    for (const model of models) {
+      try {
+        return await this.callModel(prompt, model);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        lastError = new Error(message);
+        if (!message.includes("Gemini error 404")) throw lastError;
+      }
+    }
+
+    throw new Error(lastError?.message ?? "Gemini matching failed");
   }
 }
 
@@ -133,6 +158,7 @@ type MatchContext = {
 async function loadRows(
   supabase: MinimalSupabase,
   scoutId?: string,
+  limit?: number,
 ): Promise<ScoutPatentMatchRow[]> {
   let query = supabase
     .from("scout_patent_matches")
@@ -143,7 +169,12 @@ async function loadRows(
     query = query.eq("scout_id", scoutId);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: true });
+  query = query.order("created_at", { ascending: true });
+  if (typeof limit === "number" && limit > 0) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
   return (data ?? []) as ScoutPatentMatchRow[];
 }
@@ -245,11 +276,18 @@ async function resolveSupabaseAdmin(): Promise<MinimalSupabase> {
 }
 
 export async function processPendingScoutPatentMatches(
-  input: { scoutId?: string; supabase?: MinimalSupabase; matcher?: IGeminiClient } = {},
+  input: {
+    scoutId?: string;
+    supabase?: MinimalSupabase;
+    matcher?: IGeminiClient;
+    limit?: number;
+  } = {},
 ): Promise<ProcessResult> {
   const supabase = input.supabase ?? (await resolveSupabaseAdmin());
   const matcher = getModelClient(input.matcher);
-  const pending = await loadRows(supabase, input.scoutId);
+  const envLimit = Number(process.env.GEMINI_MATCH_LIMIT ?? "");
+  const limit = input.limit ?? (Number.isFinite(envLimit) && envLimit > 0 ? envLimit : undefined);
+  const pending = await loadRows(supabase, input.scoutId, limit);
 
   let matched = 0;
   let rejected = 0;

@@ -32,10 +32,11 @@ async function resolveSupabaseAdmin(): Promise<SupabaseLike> {
 }
 
 async function resolveDefaultClients(): Promise<{ wipoClient: IWipoClient; epoClient: IEpoClient }> {
-  const [wipoModule, epoModule] = await Promise.all([import("./wipoClient"), import("./epoClient")]);
+  const bigQueryModule = await import("./bigQueryClient");
+  const sharedClient = new bigQueryModule.BigQueryPatentClient();
   return {
-    wipoClient: new wipoModule.WipoClient(),
-    epoClient: new epoModule.EpoClient(),
+    wipoClient: new bigQueryModule.BigQueryWipoClient(sharedClient),
+    epoClient: new bigQueryModule.BigQueryEpoClient(sharedClient),
   };
 }
 
@@ -175,10 +176,21 @@ export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promis
 
   const uniquePatents = dedupePatents(normalized.map((entry) => entry.patent));
 
+  const ingestMax = Number(process.env.SCOUT_INGEST_MAX_PATENTS ?? "");
+  const capped =
+    Number.isFinite(ingestMax) && ingestMax > 0
+      ? (() => {
+          const patents = uniquePatents.slice(0, ingestMax);
+          const allowed = new Set(patents.map((p) => p.patent_id));
+          const bundles = normalized.filter((b) => allowed.has(b.patent.patent_id));
+          return { patents, bundles };
+        })()
+      : { patents: uniquePatents, bundles: normalized };
+
   let newPatentsSaved = 0;
   let pendingMatchesCreated = 0;
 
-  for (const patent of uniquePatents) {
+  for (const patent of capped.patents) {
     try {
       const isNew = await upsertPatent(supabase, patent);
       if (isNew) newPatentsSaved += 1;
@@ -191,7 +203,7 @@ export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promis
     }
   }
 
-  for (const bundle of normalized) {
+  for (const bundle of capped.bundles) {
     try {
       if (bundle.wipoPublication) await ensureWipoPublication(supabase, bundle.wipoPublication);
       if (bundle.epoPublication) await ensureEpoPublication(supabase, bundle.epoPublication);
@@ -213,7 +225,7 @@ export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promis
   }
 
   return {
-    patentsReviewed: uniquePatents.length,
+    patentsReviewed: capped.patents.length,
     newPatentsSaved,
     pendingMatchesCreated,
     errors,

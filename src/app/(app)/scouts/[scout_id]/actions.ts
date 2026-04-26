@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/lib/auth";
-import { runScoutPipelineNow } from "@/server/pipeline/runScoutPipelineNow";
+import { runTrackedScoutPipelineNow } from "@/server/pipeline/runScoutPipelineNow";
 
 export async function pauseScoutAction(scoutId: string) {
   const { supabase, user } = await requireUser();
@@ -44,7 +44,7 @@ export async function runScoutNowAction(scoutId: string) {
   if (scoutError) throw new Error(scoutError.message);
   if (!scout) throw new Error("Scout not found");
 
-  await runScoutPipelineNow(scoutId);
+  await runTrackedScoutPipelineNow(scoutId);
 
   revalidatePath(`/scouts/${scoutId}`);
   revalidatePath("/scouts");

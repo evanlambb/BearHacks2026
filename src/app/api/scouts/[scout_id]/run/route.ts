@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireUser } from "@/lib/auth";
-import { runScoutPipelineNow } from "@/server/pipeline/runScoutPipelineNow";
+import { runTrackedScoutPipelineNow } from "@/server/pipeline/runScoutPipelineNow";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 
   try {
-    const result = await runScoutPipelineNow(scout_id);
+    const result = await runTrackedScoutPipelineNow(scout_id);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return NextResponse.json(
