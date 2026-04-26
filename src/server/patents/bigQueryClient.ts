@@ -34,6 +34,8 @@ type BigQueryPatentClientOptions = {
   location?: string;
   publicationsTable?: string;
   maxRows?: number;
+  maxBytesBilled?: number;
+  minPublicationDate?: number;
 };
 
 function resolveProjectId(explicitProjectId?: string): string | undefined {
@@ -150,7 +152,7 @@ function extractRecord(row: Record<string, unknown>): BigQueryPatentRecord {
   ]);
   const applicationNumber = pickString(row, ["application_number", "applicationNumber"]);
   const jurisdictionCode = pickString(row, ["country_code", "jurisdiction_code", "office"]);
-  const title = pickString(row, ["invention_title", "title", "invention_title_english"]);
+  const title = pickString(row, ["title", "invention_title", "invention_title_english"]);
   const abstract = pickString(row, ["abstract", "abstract_text"]);
 
   return {
@@ -160,14 +162,14 @@ function extractRecord(row: Record<string, unknown>): BigQueryPatentRecord {
     jurisdictionCode,
     title,
     abstract,
-    applicants: toStringArray(row.applicants) ?? toStringArray(row.assignee_harmonized),
-    inventors: toStringArray(row.inventors) ?? toStringArray(row.inventor_harmonized),
+    applicants: toStringArray(row.applicants) ?? toStringArray(row.assignees),
+    inventors: toStringArray(row.inventors),
     filingDate: normalizeDate(row.filing_date),
     publicationDate: normalizeDate(row.publication_date),
     priorityDate: normalizeDate(row.priority_date),
     grantDate: normalizeDate(row.grant_date),
-    ipcCodes: toStringArray(row.ipc),
-    cpcCodes: toStringArray(row.cpc),
+    ipcCodes: toStringArray(row.ipc_codes) ?? toStringArray(row.ipc),
+    cpcCodes: toStringArray(row.cpc_codes) ?? toStringArray(row.cpc),
     rawRecordJson: JSON.stringify(row),
   };
 }
@@ -181,6 +183,8 @@ export class BigQueryPatentClient {
   private readonly location: string;
   private readonly publicationsTable: string;
   private readonly maxRows: number;
+  private readonly maxBytesBilled?: number;
+  private readonly minPublicationDate: number;
   private readonly cache = new Map<string, BigQueryPatentRecord[]>();
 
   constructor(options: BigQueryPatentClientOptions = {}) {
@@ -197,6 +201,12 @@ export class BigQueryPatentClient {
       process.env.BIGQUERY_PUBLICATIONS_TABLE ??
       "patents-public-data.patents.publications";
     this.maxRows = options.maxRows ?? Number(process.env.BIGQUERY_MAX_ROWS ?? 200);
+    const maxBytes = Number(options.maxBytesBilled ?? process.env.BIGQUERY_MAX_BYTES_BILLED ?? "");
+    this.maxBytesBilled = Number.isFinite(maxBytes) && maxBytes > 0 ? Math.trunc(maxBytes) : undefined;
+    const minPubDate = Number(
+      options.minPublicationDate ?? process.env.BIGQUERY_MIN_PUBLICATION_DATE ?? 20100101,
+    );
+    this.minPublicationDate = Number.isFinite(minPubDate) ? Math.trunc(minPubDate) : 20100101;
   }
 
   async search(params: { textQuery: string; countries: string[] }): Promise<BigQueryPatentRecord[]> {
@@ -204,16 +214,74 @@ export class BigQueryPatentClient {
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
 
-    const [rows] = await this.bigquery.query({
-      location: this.location,
-      query: `SELECT * FROM \`${this.publicationsTable}\` LIMIT @maxRows`,
-      params: { maxRows: this.maxRows },
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `BigQuery query failed (${message}). Check BIGQUERY_PROJECT_ID and GOOGLE_APPLICATION_CREDENTIALS.`,
-      );
-    });
+    const [rows] = await this.bigquery
+      .query({
+        location: this.location,
+        query: `
+          SELECT
+            publication_number,
+            application_number,
+            family_id,
+            country_code,
+            filing_date,
+            publication_date,
+            priority_date,
+            grant_date,
+            (
+              SELECT t.text
+              FROM UNNEST(title_localized) t
+              WHERE t.text IS NOT NULL
+                AND (LOWER(t.language) = 'en' OR t.language IS NULL)
+              LIMIT 1
+            ) AS title,
+            (
+              SELECT a.text
+              FROM UNNEST(abstract_localized) a
+              WHERE a.text IS NOT NULL
+                AND (LOWER(a.language) = 'en' OR a.language IS NULL)
+              LIMIT 1
+            ) AS abstract,
+            ARRAY(
+              SELECT DISTINCT i.name
+              FROM UNNEST(inventor_harmonized) i
+              WHERE i.name IS NOT NULL
+            ) AS inventors,
+            ARRAY(
+              SELECT DISTINCT a.name
+              FROM UNNEST(assignee_harmonized) a
+              WHERE a.name IS NOT NULL
+            ) AS applicants,
+            ARRAY(
+              SELECT DISTINCT i.code
+              FROM UNNEST(ipc) i
+              WHERE i.code IS NOT NULL
+            ) AS ipc_codes,
+            ARRAY(
+              SELECT DISTINCT c.code
+              FROM UNNEST(cpc) c
+              WHERE c.code IS NOT NULL
+            ) AS cpc_codes
+          FROM \`${this.publicationsTable}\`
+          WHERE publication_date >= @minPublicationDate
+            AND (
+              EXISTS (SELECT 1 FROM UNNEST(title_localized) t WHERE t.text IS NOT NULL)
+              OR EXISTS (SELECT 1 FROM UNNEST(abstract_localized) a WHERE a.text IS NOT NULL)
+            )
+          ORDER BY publication_date DESC
+          LIMIT @maxRows
+        `,
+        params: {
+          maxRows: this.maxRows,
+          minPublicationDate: this.minPublicationDate,
+        },
+        ...(this.maxBytesBilled ? { maximumBytesBilled: String(this.maxBytesBilled) } : {}),
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `BigQuery query failed (${message}). Check BIGQUERY_PROJECT_ID, GOOGLE_APPLICATION_CREDENTIALS, and query cost limits.`,
+        );
+      });
 
     const allRecords = (rows as Record<string, unknown>[]).map((row) => extractRecord(row));
     const queryTokens = tokenizeQuery(params.textQuery);
