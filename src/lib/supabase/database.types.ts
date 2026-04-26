@@ -232,6 +232,18 @@ export type ScoutRunInsert = WithDefaults<
 >;
 export type ScoutRunUpdate = Partial<ScoutRunInsert>;
 
+// scout_query_cache ----------------------------------------------------------
+export type ScoutQueryCacheRow = {
+  scout_id: string;
+  query_fingerprint: string;
+  fetched_at: string;
+};
+export type ScoutQueryCacheInsert = WithDefaults<
+  ScoutQueryCacheRow,
+  "fetched_at"
+>;
+export type ScoutQueryCacheUpdate = Partial<ScoutQueryCacheInsert>;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Database — shape compatible with @supabase/supabase-js generic
 // ─────────────────────────────────────────────────────────────────────────────
@@ -276,6 +288,11 @@ export type Database = {
         OpportunityReportUpdate
       >;
       scout_runs: TableShape<ScoutRunRow, ScoutRunInsert, ScoutRunUpdate>;
+      scout_query_cache: TableShape<
+        ScoutQueryCacheRow,
+        ScoutQueryCacheInsert,
+        ScoutQueryCacheUpdate
+      >;
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };

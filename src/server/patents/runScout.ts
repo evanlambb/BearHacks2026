@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import type {
   EpoFamilyMemberInsert,
   EpoPublicationInsert,
@@ -145,6 +147,64 @@ function dedupePatents(patents: PatentInsert[]): PatentInsert[] {
   return [...byKey.values()];
 }
 
+function buildQueryFingerprint(input: {
+  therapeutic_area: string;
+  modality: string;
+  countries: string[];
+  patent_signal_type: string;
+  expiry_time_horizon_months: number | null;
+  non_filed_lookback_years: number | null;
+}) {
+  const canonical = JSON.stringify({
+    therapeutic_area: input.therapeutic_area.trim().toLowerCase(),
+    modality: input.modality.trim().toLowerCase(),
+    countries: [...input.countries].map((c) => c.trim().toLowerCase()).sort(),
+    patent_signal_type: input.patent_signal_type,
+    expiry_time_horizon_months: input.expiry_time_horizon_months,
+    non_filed_lookback_years: input.non_filed_lookback_years,
+  });
+  return crypto.createHash("sha256").update(canonical).digest("hex");
+}
+
+async function hasFreshScoutQueryCache(
+  supabase: SupabaseLike,
+  scoutId: string,
+  queryFingerprint: string,
+): Promise<boolean> {
+  const bypassCache = process.env.SCOUT_BIGQUERY_CACHE_BYPASS === "true";
+  if (bypassCache) return false;
+
+  const cacheHours = Number(process.env.SCOUT_BIGQUERY_CACHE_HOURS ?? 24);
+  if (!Number.isFinite(cacheHours) || cacheHours <= 0) return false;
+  const cutoffIso = new Date(Date.now() - cacheHours * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("scout_query_cache")
+    .select("fetched_at")
+    .eq("scout_id", scoutId)
+    .eq("query_fingerprint", queryFingerprint)
+    .gte("fetched_at", cutoffIso)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
+async function upsertScoutQueryCache(
+  supabase: SupabaseLike,
+  scoutId: string,
+  queryFingerprint: string,
+): Promise<void> {
+  const { error } = await supabase.from("scout_query_cache").upsert(
+    {
+      scout_id: scoutId,
+      query_fingerprint: queryFingerprint,
+      fetched_at: new Date().toISOString(),
+    },
+    { onConflict: "scout_id,query_fingerprint", ignoreDuplicates: false },
+  );
+  if (error) throw new Error(error.message);
+}
+
 export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promise<RunScoutResult> {
   const supabase = deps.supabase ?? (await resolveSupabaseAdmin());
   const defaults =
@@ -155,6 +215,23 @@ export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promis
 
   const scout = await loadScoutOrThrow(supabase, scoutId);
   const query = buildPatentSearchQuery(scout);
+  const queryFingerprint = buildQueryFingerprint({
+    therapeutic_area: scout.therapeutic_area,
+    modality: scout.modality,
+    countries: scout.countries,
+    patent_signal_type: scout.patent_signal_type,
+    expiry_time_horizon_months: scout.expiry_time_horizon_months,
+    non_filed_lookback_years: scout.non_filed_lookback_years,
+  });
+
+  if (await hasFreshScoutQueryCache(supabase, scout.id, queryFingerprint)) {
+    return {
+      patentsReviewed: 0,
+      newPatentsSaved: 0,
+      pendingMatchesCreated: 0,
+      errors,
+    };
+  }
 
   let wipoRaw: WipoRawPublication[] = [];
   let epoRaw: EpoRawPublication[] = [];
@@ -222,6 +299,10 @@ export async function runScout(scoutId: string, deps: RunScoutDeps = {}): Promis
         }`,
       );
     }
+  }
+
+  if (errors.length === 0) {
+    await upsertScoutQueryCache(supabase, scout.id, queryFingerprint);
   }
 
   return {
