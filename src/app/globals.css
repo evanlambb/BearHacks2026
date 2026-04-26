@@ -22,6 +22,10 @@
   --color-warning: oklch(70% 0.14 75);
   --color-danger: oklch(55% 0.2 25);
   --color-danger-muted: oklch(96% 0.02 25);
+  --color-nav-bg: oklch(21% 0.04 255);
+  --color-nav-ink: oklch(98% 0.004 260);
+  --color-nav-ink-muted: oklch(81% 0.02 255);
+  --color-brand: oklch(59% 0.17 258);
 
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
@@ -51,10 +55,29 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
 .hairline {
   border-color: var(--color-border);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .mono {
@@ -83,12 +106,12 @@ body {
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--color-ink);
-  color: var(--color-surface);
-  border: 1px solid var(--color-ink);
+  background: var(--color-brand);
+  color: var(--color-accent-fg);
+  border: 1px solid oklch(52% 0.16 258);
 }
 .btn-primary:hover:not(:disabled) {
-  background: oklch(15% 0.02 260);
+  background: oklch(52% 0.16 258);
 }
 .btn-secondary {
   background: var(--color-surface);
@@ -97,6 +120,14 @@ body {
 }
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-surface-muted);
+}
+.btn-nav {
+  background: oklch(100% 0 0 / 0.08);
+  color: var(--color-nav-ink);
+  border: 1px solid oklch(100% 0 0 / 0.18);
+}
+.btn-nav:hover:not(:disabled) {
+  background: oklch(100% 0 0 / 0.16);
 }
 .btn-ghost {
   background: transparent;

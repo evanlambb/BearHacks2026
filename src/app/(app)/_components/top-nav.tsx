@@ -30,15 +30,15 @@ export function TopNav({ email }: { email: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative inline-flex h-8 items-center rounded-[var(--radius-md)] px-3 text-[13px] font-medium transition-colors",
+                "relative inline-flex h-9 items-center rounded-[var(--radius-md)] px-3.5 text-[14px] font-medium transition-colors",
                 active
-                  ? "text-[color:var(--color-ink)]"
-                  : "text-[color:var(--color-ink-muted)] hover:text-[color:var(--color-ink)]",
+                  ? "bg-white/10 text-[color:var(--color-nav-ink)]"
+                  : "text-[color:var(--color-nav-ink-muted)] hover:bg-white/5 hover:text-[color:var(--color-nav-ink)]",
               )}
             >
               {item.label}
               {active ? (
-                <span className="absolute inset-x-3 -bottom-[15px] h-px bg-[color:var(--color-ink)]" />
+                <span className="absolute inset-x-3 -bottom-[11px] h-0.5 rounded bg-[color:var(--color-brand)]" />
               ) : null}
             </Link>
           );
@@ -47,7 +47,7 @@ export function TopNav({ email }: { email: string }) {
 
       <div className="flex items-center gap-2">
         {onDashboard ? (
-          <Link href="/create-scout" className="btn btn-primary">
+          <Link href="/create-scout" className="btn btn-primary h-9">
             <Plus className="h-3.5 w-3.5" />
             Create Scout
           </Link>
@@ -58,15 +58,15 @@ export function TopNav({ email }: { email: string }) {
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
             onBlur={() => setTimeout(() => setMenuOpen(false), 120)}
-            className="btn btn-ghost gap-2 pl-1 pr-2"
+            className="btn btn-nav h-9 gap-2 pl-1 pr-2"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
             <Avatar email={email} />
-            <span className="hidden text-[13px] text-[color:var(--color-ink)] sm:inline">
+            <span className="hidden text-[13px] text-[color:var(--color-nav-ink)] lg:inline">
               {email}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[color:var(--color-ink-subtle)]" />
+            <ChevronDown className="h-3.5 w-3.5 text-[color:var(--color-nav-ink-muted)]" />
           </button>
 
           {menuOpen ? (
@@ -102,7 +102,7 @@ export function TopNav({ email }: { email: string }) {
 function Avatar({ email }: { email: string }) {
   const initial = (email[0] ?? "?").toUpperCase();
   return (
-    <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-accent-muted)] text-[11px] font-semibold text-[color:var(--color-accent)]">
+    <span className="grid h-7 w-7 place-items-center rounded-full bg-[color:var(--color-brand)]/30 text-[11px] font-semibold text-[color:var(--color-nav-ink)]">
       {initial}
     </span>
   );

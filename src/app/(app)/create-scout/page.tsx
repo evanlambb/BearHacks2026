@@ -7,18 +7,11 @@ export default async function CreateScoutPage() {
   await requireUser();
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8">
-      <div className="border-b border-[color:var(--color-border)] pb-6">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-ink-subtle)]">
-          New scout
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          Configure a scout
-        </h1>
+    <div className="mx-auto w-full max-w-[1320px] space-y-8">
+      <div>
+        <h1 className="text-4xl font-semibold tracking-tight">Create Scout</h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-[color:var(--color-ink-muted)]">
-          Define geography, therapeutic area, signal type, and economics. Patent
-          Scout will run this scout every six hours against fresh WIPO and EPO
-          data and surface investment-grade opportunity reports.
+          Define the filters your scout will use to identify patent-driven drug opportunities.
         </p>
       </div>
 

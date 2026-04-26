@@ -22,6 +22,9 @@ export default async function ScoutsPage() {
   if (reportsRes.error) throw reportsRes.error;
 
   const scouts = scoutsRes.data ?? [];
+  const activeCount = scouts.filter((s) => s.status === "active").length;
+  const pausedCount = scouts.filter((s) => s.status === "paused").length;
+  const errorCount = scouts.filter((s) => s.status === "error").length;
   const reportCounts = new Map<string, number>();
   for (const r of reportsRes.data ?? []) {
     if (!r.scout_id) continue;
@@ -30,17 +33,11 @@ export default async function ScoutsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border)] pb-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-ink-subtle)]">
-            Scouts
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-            Your scouts
-          </h1>
+          <h1 className="text-4xl font-semibold tracking-tight">Scouts</h1>
           <p className="mt-1.5 max-w-2xl text-[13px] text-[color:var(--color-ink-muted)]">
-            Every scout runs every six hours and continuously surfaces reportable
-            opportunities.
+            Manage automated searches for patent expiry and non-filed region opportunities.
           </p>
         </div>
         <Link
@@ -54,93 +51,73 @@ export default async function ScoutsPage() {
       </div>
 
       {scouts.length > 0 ? (
-        <div
-          className="surface overflow-hidden"
-          data-testid="scouts-list"
-          role="table"
-          aria-label="Scouts"
-        >
-          <div className="hidden border-b border-[color:var(--color-border)] text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)] md:grid md:grid-cols-[2fr_1.5fr_1fr_1.2fr_1fr_1fr_0.8fr]">
-            <div className="px-4 py-2.5">Scout</div>
-            <div className="px-4 py-2.5">Countries</div>
-            <div className="px-4 py-2.5">Therapeutic area</div>
-            <div className="px-4 py-2.5">Modality</div>
-            <div className="px-4 py-2.5">Signal</div>
-            <div className="px-4 py-2.5">Last run</div>
-            <div className="px-4 py-2.5">Reports</div>
-          </div>
-          <ul role="rowgroup">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+          <div className="space-y-3" data-testid="scouts-list" role="table" aria-label="Scouts">
             {scouts.map((s, idx) => {
-              const fallbackName = `${s.therapeutic_area} · ${readableSignal(
-                s.patent_signal_type,
-              )}`;
+              const fallbackName = `${s.therapeutic_area} · ${readableSignal(s.patent_signal_type)}`;
               return (
-                <li key={s.id} role="row" data-testid="scout-row">
-                  <Link
-                    href={`/scouts/${s.id}`}
-                    data-testid={`scout-link-${s.id}`}
-                    className="block border-b border-[color:var(--color-border)] transition-colors hover:bg-[color:var(--color-surface-muted)] last:border-0"
-                  >
-                    <div className="flex flex-col gap-2 px-4 py-3 md:hidden">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="truncate text-[14px] font-medium text-[color:var(--color-ink)]">
-                            {s.name?.trim() || fallbackName}
-                          </div>
-                          <div className="mt-0.5 text-[12px] text-[color:var(--color-ink-muted)]">
-                            {s.countries.join(", ") || "—"}
-                          </div>
-                        </div>
-                        <StatusPill status={s.status} />
+                <Link
+                  key={s.id}
+                  href={`/scouts/${s.id}`}
+                  data-testid={`scout-link-${s.id}`}
+                  className="surface block p-5 transition-colors hover:bg-[color:var(--color-surface-muted)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[20px] font-semibold tracking-tight text-[color:var(--color-ink)]">
+                        {s.name?.trim() || fallbackName}
                       </div>
-                      <div className="text-[12px] text-[color:var(--color-ink-muted)]">
-                        {s.therapeutic_area} · {s.modality}
-                      </div>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="kbd">
-                          {readableSignal(s.patent_signal_type)}
-                        </span>
-                        <span className="mono text-[color:var(--color-ink-subtle)]">
-                          {formatDate(s.last_run_at)}
-                        </span>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {s.countries.slice(0, 4).map((c) => (
+                          <span key={c} className="pill bg-[color:var(--color-surface-muted)] text-[color:var(--color-ink-muted)]">
+                            {c}
+                          </span>
+                        ))}
+                        {s.countries.length > 4 ? (
+                          <span className="pill text-[color:var(--color-ink-subtle)]">+{s.countries.length - 4}</span>
+                        ) : null}
                       </div>
                     </div>
+                    <StatusPill status={s.status} />
+                  </div>
 
-                    <div className="hidden items-center text-[13px] md:grid md:grid-cols-[2fr_1.5fr_1fr_1.2fr_1fr_1fr_0.8fr]">
-                      <div className="px-4 py-2.5">
-                        <div className="font-medium text-[color:var(--color-ink)]">
-                          {s.name?.trim() || fallbackName}
-                        </div>
-                        <div className="mt-0.5 text-[11px] text-[color:var(--color-ink-subtle)]">
-                          #{idx + 1}
-                        </div>
-                      </div>
-                      <div className="px-4 py-2.5 text-[color:var(--color-ink-muted)]">
-                        {s.countries.join(", ") || "—"}
-                      </div>
-                      <div className="px-4 py-2.5 text-[color:var(--color-ink-muted)]">
-                        {s.therapeutic_area}
-                      </div>
-                      <div className="px-4 py-2.5 text-[color:var(--color-ink-muted)]">
-                        {s.modality}
-                      </div>
-                      <div className="px-4 py-2.5">
-                        <span className="kbd">
-                          {readableSignal(s.patent_signal_type)}
-                        </span>
-                      </div>
-                      <div className="px-4 py-2.5 mono text-[color:var(--color-ink-muted)]">
-                        {formatDate(s.last_run_at)}
-                      </div>
-                      <div className="px-4 py-2.5 mono text-[color:var(--color-ink-muted)]">
-                        {reportCounts.get(s.id) ?? 0}
-                      </div>
-                    </div>
-                  </Link>
-                </li>
+                  <div className="mt-4 grid grid-cols-2 gap-4 text-[13px] lg:grid-cols-5">
+                    <Stat label="Therapeutic Area" value={s.therapeutic_area} />
+                    <Stat label="Modality" value={s.modality} />
+                    <Stat label="Signal" value={readableSignal(s.patent_signal_type)} />
+                    <Stat label="Last Run" value={formatDate(s.last_run_at)} mono />
+                    <Stat label="Reports" value={String(reportCounts.get(s.id) ?? 0)} mono />
+                  </div>
+                  <div className="mt-2 text-[11px] text-[color:var(--color-ink-subtle)]">Scout #{idx + 1}</div>
+                </Link>
               );
             })}
-          </ul>
+          </div>
+
+          <aside className="surface p-4">
+            <div className="text-[20px] font-semibold tracking-tight">Scout Health</div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <HealthCard label="Running now" value={activeCount} />
+              <HealthCard label="Paused" value={pausedCount} />
+              <HealthCard label="Errors" value={errorCount} />
+              <HealthCard label="Total scouts" value={scouts.length} />
+            </div>
+            {scouts[0] ? (
+              <div className="mt-5 rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-surface-muted)] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-[13px] font-semibold text-[color:var(--color-ink)]">
+                    {scouts[0].name?.trim() || "Latest scout"}
+                  </div>
+                  <StatusPill status={scouts[0].status} />
+                </div>
+                <div className="space-y-1 text-[12px] text-[color:var(--color-ink-muted)]">
+                  <div>{scouts[0].therapeutic_area}</div>
+                  <div>{scouts[0].modality}</div>
+                  <div>{readableSignal(scouts[0].patent_signal_type)}</div>
+                </div>
+              </div>
+            ) : null}
+          </aside>
         </div>
       ) : (
         <div
@@ -164,6 +141,26 @@ export default async function ScoutsPage() {
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--color-ink-subtle)]">
+        {label}
+      </div>
+      <div className={`mt-1 text-[13px] text-[color:var(--color-ink)] ${mono ? "mono" : ""}`}>{value}</div>
+    </div>
+  );
+}
+
+function HealthCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
+      <div className="text-[11px] text-[color:var(--color-ink-subtle)]">{label}</div>
+      <div className="mt-1 text-[26px] font-semibold tracking-tight">{value}</div>
     </div>
   );
 }

@@ -120,6 +120,8 @@ export function CreateScoutForm() {
   ]);
 
   const isValid = Object.keys(errors).length === 0;
+  const signalLabel =
+    signalType === "patent_expiry" ? "Patent Expiry" : "Non-Filed Region";
 
   function toggleCountry(country: string) {
     setCountries((prev) =>
@@ -195,31 +197,32 @@ export function CreateScoutForm() {
     <form
       onSubmit={onSubmit}
       data-testid="create-scout-form"
-      className="space-y-8"
+      className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]"
       noValidate
     >
-      {/* ─────────────── Name (optional) ─────────────── */}
-      <Section
-        title="Identifier"
-        description="An optional label to help you recognise this scout in lists and reports."
-      >
-        <Field label="Name" hint="Optional">
-          <input
-            type="text"
-            data-testid="scout-name"
-            className="input"
-            placeholder="e.g. NSCLC expiry watch — US/EU"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
-      </Section>
+      <div className="space-y-8">
+        {/* ─────────────── Name (optional) ─────────────── */}
+        <Section
+          title="Identifier"
+          description="An optional label to help you recognise this scout in lists and reports."
+        >
+          <Field label="Name" hint="Optional">
+            <input
+              type="text"
+              data-testid="scout-name"
+              className="input"
+              placeholder="e.g. NSCLC expiry watch — US/EU"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+        </Section>
 
-      {/* ─────────────── Geography ─────────────── */}
-      <Section
-        title="Geography"
-        description="Jurisdictions to scout. We ingest WIPO + EPO filings for each selected country."
-      >
+        {/* ─────────────── Geography ─────────────── */}
+        <Section
+          title="Geography"
+          description="Jurisdictions to scout. We ingest WIPO + EPO filings for each selected country."
+        >
         <Field
           label="Countries"
           required
@@ -254,10 +257,10 @@ export function CreateScoutForm() {
             })}
           </div>
         </Field>
-      </Section>
+        </Section>
 
-      {/* ─────────────── Thesis ─────────────── */}
-      <Section
+        {/* ─────────────── Thesis ─────────────── */}
+        <Section
         title="Thesis"
         description="Define the therapeutic area and modality that the scout should target."
       >
@@ -291,10 +294,10 @@ export function CreateScoutForm() {
             />
           </Field>
         </div>
-      </Section>
+        </Section>
 
-      {/* ─────────────── Patent signal ─────────────── */}
-      <Section
+        {/* ─────────────── Patent signal ─────────────── */}
+        <Section
         title="Patent signal"
         description="Select the type of opportunity the scout should surface."
       >
@@ -370,10 +373,10 @@ export function CreateScoutForm() {
             </Field>
           )}
         </div>
-      </Section>
+        </Section>
 
-      {/* ─────────────── Market floor ─────────────── */}
-      <Section
+        {/* ─────────────── Market floor ─────────────── */}
+        <Section
         title="Market floor"
         description="Optional minimum addressable market across the selected jurisdictions."
       >
@@ -419,10 +422,10 @@ export function CreateScoutForm() {
             />
           </Field>
         </div>
-      </Section>
+        </Section>
 
-      {/* ─────────────── Capex ─────────────── */}
-      <Section
+        {/* ─────────────── Capex ─────────────── */}
+        <Section
         title="Capex range"
         description="Optional range of capital expenditure you're willing to deploy."
       >
@@ -461,37 +464,61 @@ export function CreateScoutForm() {
             {errors.capex}
           </p>
         ) : null}
-      </Section>
+        </Section>
 
-      {/* ─────────────── Footer ─────────────── */}
-      {serverError ? (
-        <div
-          role="alert"
-          data-testid="scout-form-error"
-          className="rounded-[var(--radius-md)] border border-[color:var(--color-danger)]/30 bg-[color:var(--color-danger-muted)] px-3 py-2 text-[12px] text-[color:var(--color-danger)]"
-        >
-          {serverError}
+        {/* ─────────────── Footer ─────────────── */}
+        {serverError ? (
+          <div
+            role="alert"
+            data-testid="scout-form-error"
+            className="rounded-[var(--radius-md)] border border-[color:var(--color-danger)]/30 bg-[color:var(--color-danger-muted)] px-3 py-2 text-[12px] text-[color:var(--color-danger)]"
+          >
+            {serverError}
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between border-t border-[color:var(--color-border)] pt-6">
+          <Link
+            href="/dashboard"
+            data-testid="scout-cancel"
+            className="btn btn-ghost"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            data-testid="scout-submit"
+            disabled={pending}
+            aria-busy={pending}
+            className="btn btn-primary"
+          >
+            {pending ? "Creating…" : "Create Scout"}
+          </button>
         </div>
-      ) : null}
-
-      <div className="flex items-center justify-between border-t border-[color:var(--color-border)] pt-6">
-        <Link
-          href="/dashboard"
-          data-testid="scout-cancel"
-          className="btn btn-ghost"
-        >
-          Cancel
-        </Link>
-        <button
-          type="submit"
-          data-testid="scout-submit"
-          disabled={pending}
-          aria-busy={pending}
-          className="btn btn-primary"
-        >
-          {pending ? "Creating…" : "Create Scout"}
-        </button>
       </div>
+
+      <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <div className="surface p-5">
+          <div className="text-[24px] font-semibold tracking-tight">Scout Summary</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="pill bg-[color:var(--color-surface-muted)]">Patent Signal</span>
+            <span className="pill bg-[color:var(--color-surface-muted)]">{signalLabel}</span>
+            <span className="pill bg-[color:var(--color-surface-muted)]">{countries.length} countries</span>
+            {modality.trim() ? (
+              <span className="pill bg-[color:var(--color-surface-muted)]">{modality.trim()}</span>
+            ) : null}
+          </div>
+          <div className="mt-5 space-y-3 text-[13px] text-[color:var(--color-ink-muted)]">
+            <p>Search WIPO and EPO every 6 hours.</p>
+            <p>Filter candidates with Gemini.</p>
+            <p>Generate evidence-backed reports.</p>
+            <p>Create downloadable PDF output.</p>
+          </div>
+          <p className="mt-5 text-[12px] text-[color:var(--color-ink-subtle)]">
+            This scout runs automatically until paused or deleted.
+          </p>
+        </div>
+      </aside>
     </form>
   );
 }

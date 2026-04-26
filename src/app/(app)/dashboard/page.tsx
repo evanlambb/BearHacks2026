@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight, Plus } from "lucide-react";
+import { Activity, ArrowRight, FileText, Plus, Radar, Target } from "lucide-react";
 
 import { requireUser } from "@/lib/auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   await requireUser();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <PageHeader />
 
       <Suspense fallback={<MetricsSkeleton />}>
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
         </div>
 
         <Suspense fallback={<TableSkeleton />}>
-          <OpportunitiesTable />
+          <OpportunitiesPanel />
         </Suspense>
       </section>
     </div>
@@ -52,17 +52,11 @@ export default async function DashboardPage() {
 
 function PageHeader() {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[color:var(--color-border)] pb-6">
+    <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--color-ink-subtle)]">
-          Overview
-        </div>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-          Dashboard
-        </h1>
+        <h1 className="text-4xl font-semibold tracking-tight">Opportunity Dashboard</h1>
         <p className="mt-1.5 max-w-2xl text-[13px] text-[color:var(--color-ink-muted)]">
-          Live metrics from your patent scouts. Each scout ingests fresh WIPO
-          and EPO filings every six hours.
+          Monitor active patent scouts and review newly discovered drug opportunities.
         </p>
       </div>
       <Link
@@ -104,26 +98,29 @@ async function Metrics() {
   const opportunitiesFound = opportunitiesRes.count ?? 0;
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       <MetricCard
         testId="metric-patents-reviewed"
         label="Patents reviewed"
         value={patentsReviewed.toLocaleString()}
         hint="All scouts · all runs"
+        icon={<FileText className="h-5 w-5 text-[#5a76ff]" />}
       />
       <MetricCard
         testId="metric-opportunities-found"
         label="Opportunities found"
         value={opportunitiesFound.toLocaleString()}
         hint="Reports marked complete"
+        icon={<Target className="h-5 w-5 text-[#18a089]" />}
       />
       <MetricCard
         testId="metric-scout-count"
-        label="Number of scouts"
+        label="Active scouts"
         value={scoutCount.toLocaleString()}
         hint={
           scoutCount === 0 ? "No scouts yet" : "Owned by you"
         }
+        icon={<Radar className="h-5 w-5 text-[#9b69f0]" />}
       />
     </div>
   );
@@ -134,22 +131,27 @@ function MetricCard({
   label,
   value,
   hint,
+  icon,
 }: {
   testId: string;
   label: string;
   value: string;
   hint?: string;
+  icon: React.ReactNode;
 }) {
   return (
-    <div className="surface px-5 py-4" data-testid={testId}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-ink-subtle)]">
-        {label}
+    <div className="stat-card px-6 py-5" data-testid={testId}>
+      <div className="flex items-center justify-between">
+        <div className="text-[13px] font-medium text-[color:var(--color-ink-muted)]">{label}</div>
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--color-surface-muted)]">
+          {icon}
+        </div>
       </div>
-      <div className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">
+      <div className="mt-2 text-5xl font-semibold tracking-tight tabular-nums">
         {value}
       </div>
       {hint ? (
-        <div className="mt-1 text-[11px] text-[color:var(--color-ink-subtle)]">
+        <div className="mt-1 text-[12px] text-emerald-600">
           {hint}
         </div>
       ) : null}
@@ -178,7 +180,7 @@ function MetricsSkeleton() {
 /*  Opportunities table                                                         */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
-async function OpportunitiesTable() {
+async function OpportunitiesPanel() {
   const supabase = await getSupabaseServer();
 
   // Two queries in parallel: own-scout count for the empty-state branch,
@@ -207,12 +209,13 @@ async function OpportunitiesTable() {
   }
 
   return (
-    <div
-      className="surface overflow-hidden"
-      data-testid="opportunities-table"
-      role="table"
-      aria-label="Opportunities"
-    >
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+      <div
+        className="surface overflow-hidden"
+        data-testid="opportunities-table"
+        role="table"
+        aria-label="Opportunities"
+      >
       {/* Desktop column header (md+) */}
       <div
         role="row"
@@ -226,7 +229,7 @@ async function OpportunitiesTable() {
         <div className="px-4 py-2.5">Generated</div>
       </div>
 
-      <ul role="rowgroup">
+        <ul role="rowgroup">
         {reports.map((r) => {
           const isComplete = r.report_status === "complete";
           const inner = (
@@ -319,7 +322,35 @@ async function OpportunitiesTable() {
             </li>
           );
         })}
-      </ul>
+        </ul>
+      </div>
+
+      <aside className="surface p-4" data-testid="dashboard-activity">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-[18px] font-semibold tracking-tight">Scout Activity</h3>
+          <Activity className="h-4 w-4 text-[color:var(--color-ink-subtle)]" />
+        </div>
+        <div className="space-y-3">
+          {reports.slice(0, 3).map((r) => (
+            <div key={r.id} className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3">
+              <div className="text-[13px] font-medium text-[color:var(--color-ink)]">
+                {r.drug_name ?? r.patent_id ?? "Untitled opportunity"}
+              </div>
+              <div className="mt-1 text-[12px] text-[color:var(--color-ink-muted)]">
+                {r.region ?? "Unknown region"} · {readableStatus(r.report_status)}
+              </div>
+              <div className="mt-2 mono text-[11px] text-[color:var(--color-ink-subtle)]">
+                {formatDate(r.generated_at ?? r.created_at)}
+              </div>
+            </div>
+          ))}
+          {reports.length === 0 ? (
+            <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--color-border-strong)] p-4 text-[12px] text-[color:var(--color-ink-muted)]">
+              Activity appears here after the first run.
+            </div>
+          ) : null}
+        </div>
+      </aside>
     </div>
   );
 }
@@ -429,6 +460,14 @@ function SignalPill({ signal }: { signal: string }) {
         ? "Non-filed region"
         : signal;
   return <span className="kbd">{label}</span>;
+}
+
+function readableStatus(status: string) {
+  if (status === "complete") return "Complete";
+  if (status === "generating") return "Generating";
+  if (status === "pending") return "Pending";
+  if (status === "error") return "Error";
+  return status;
 }
 
 function StatusPill({

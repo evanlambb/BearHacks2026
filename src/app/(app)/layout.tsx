@@ -13,26 +13,25 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-[color:var(--color-bg)]">
-      <header className="sticky top-0 z-30 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)]/85 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-[1320px] items-center gap-6 px-6">
+      <header className="sticky top-0 z-50 border-b border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-ink)] shadow-[0_8px_20px_-16px_rgba(15,23,42,0.35)] backdrop-blur-none">
+        <div className="mx-auto flex h-16 w-full max-w-[1360px] items-center gap-8 px-6">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-[color:var(--color-accent)]" />
-            <span className="text-[14px] font-semibold tracking-tight">
-              Patent Scout
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-[color:var(--color-brand)]" />
+            <span className="text-[22px] font-semibold leading-none tracking-tight">
+              Scout
             </span>
-            <span className="kbd ml-1">beta</span>
           </Link>
 
           <TopNav email={email} />
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1320px] flex-1 px-6 py-8">
+      <main className="mx-auto w-full max-w-[1360px] flex-1 px-6 py-8">
         {children}
       </main>
 
       <footer className="border-t border-[color:var(--color-border)] bg-[color:var(--color-surface)]">
-        <div className="mx-auto flex h-12 w-full max-w-[1320px] items-center justify-between px-6 text-[11px] text-[color:var(--color-ink-subtle)]">
+        <div className="mx-auto flex h-11 w-full max-w-[1360px] items-center justify-between px-6 text-[11px] text-[color:var(--color-ink-subtle)]">
           <span>Patent Scout · WIPO + EPO ingestion · 6h cadence</span>
           <span className="mono">{user.id.slice(0, 8)}</span>
         </div>
