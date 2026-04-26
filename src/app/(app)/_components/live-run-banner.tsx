@@ -22,9 +22,14 @@ export function LiveRunBanner({
   reportsComplete,
   isStale,
 }: LiveRunBannerProps) {
-  const [now, setNow] = useState(Date.now());
+  const startTs = useMemo(() => {
+    const parsed = new Date(startedAt).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }, [startedAt]);
+  const [now, setNow] = useState(startTs);
 
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);

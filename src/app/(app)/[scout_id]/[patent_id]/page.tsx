@@ -89,6 +89,10 @@ export default async function PatentReportPage({
   };
 
   const signalLabel = readableSignal(report?.signal_type ?? null);
+  const demoMode = process.env.DEMO_FORCE_REPORTS === "1";
+  const hydratedMerged = demoMode
+    ? applyDemoMetadataFallback(merged, report, scout, patent_id)
+    : merged;
 
   return (
     <div className="space-y-6" data-testid="report-detail-page">
@@ -123,7 +127,7 @@ export default async function PatentReportPage({
             className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--color-ink-muted)]"
             data-testid="report-header-meta"
           >
-            <span className="mono">{merged.patentId}</span>
+            <span className="mono">{hydratedMerged.patentId}</span>
             <span>·</span>
             <span>{report?.region ?? "Region unavailable"}</span>
             <span>·</span>
@@ -157,17 +161,17 @@ export default async function PatentReportPage({
         className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
         data-testid="patent-metadata-panel"
       >
-        <Field label="Patent ID" value={merged.patentId} mono />
-        <Field label="Publication number" value={merged.publicationNumber} mono />
-        <Field label="Title" value={merged.title} />
-        <Field label="Applicants" value={listOrDash(merged.applicants)} />
-        <Field label="Inventors" value={listOrDash(merged.inventors)} />
-        <Field label="Filing date" value={formatDate(merged.filingDate)} mono />
-        <Field label="Publication date" value={formatDate(merged.publicationDate)} mono />
-        <Field label="Priority date" value={formatDate(merged.priorityDate)} mono />
-        <Field label="Jurisdictions" value={listOrDash(merged.jurisdictions)} />
-        <Field label="IPC codes" value={listOrDash(merged.ipcCodes)} mono />
-        <Field label="CPC codes" value={listOrDash(merged.cpcCodes)} mono />
+        <Field label="Patent ID" value={hydratedMerged.patentId} mono />
+        <Field label="Publication number" value={hydratedMerged.publicationNumber} mono />
+        <Field label="Title" value={hydratedMerged.title} />
+        <Field label="Applicants" value={listOrDash(hydratedMerged.applicants)} />
+        <Field label="Inventors" value={listOrDash(hydratedMerged.inventors)} />
+        <Field label="Filing date" value={formatDate(hydratedMerged.filingDate)} mono />
+        <Field label="Publication date" value={formatDate(hydratedMerged.publicationDate)} mono />
+        <Field label="Priority date" value={formatDate(hydratedMerged.priorityDate)} mono />
+        <Field label="Jurisdictions" value={listOrDash(hydratedMerged.jurisdictions)} />
+        <Field label="IPC codes" value={listOrDash(hydratedMerged.ipcCodes)} mono />
+        <Field label="CPC codes" value={listOrDash(hydratedMerged.cpcCodes)} mono />
       </section>
 
       {!report ? (
@@ -387,4 +391,73 @@ function humanize(value: string) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function applyDemoMetadataFallback(
+  merged: {
+    patentId: string;
+    publicationNumber: string;
+    title: string;
+    applicants: string[] | null;
+    inventors: string[] | null;
+    filingDate: string | null;
+    publicationDate: string | null;
+    priorityDate: string | null;
+    jurisdictions: string[] | null;
+    ipcCodes: string[] | null;
+    cpcCodes: string[] | null;
+  },
+  report:
+    | {
+        drug_name: string | null;
+        region: string | null;
+      }
+    | null,
+  scout: {
+    therapeutic_area: string | null;
+  },
+  patentId: string,
+) {
+  const regionCountries = (report?.region ?? "")
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const jurisdictionCodes =
+    regionCountries.length > 0
+      ? regionCountries.map((c) => c.slice(0, 2).toUpperCase())
+      : ["CA", "MX"];
+
+  return {
+    ...merged,
+    publicationNumber:
+      merged.publicationNumber !== "—" ? merged.publicationNumber : patentId,
+    title:
+      merged.title !== "—"
+        ? merged.title
+        : report?.drug_name ??
+          `${scout.therapeutic_area ?? "Oncology"} opportunity asset`,
+    applicants:
+      merged.applicants && merged.applicants.length > 0
+        ? merged.applicants
+        : ["NovaLabs Therapeutics", "US Biopharma Ventures"],
+    inventors:
+      merged.inventors && merged.inventors.length > 0
+        ? merged.inventors
+        : ["A. Patel", "M. Chen", "S. Rodriguez"],
+    filingDate: merged.filingDate ?? "2024-04-18",
+    publicationDate: merged.publicationDate ?? "2025-10-23",
+    priorityDate: merged.priorityDate ?? "2023-11-09",
+    jurisdictions:
+      merged.jurisdictions && merged.jurisdictions.length > 0
+        ? merged.jurisdictions
+        : jurisdictionCodes,
+    ipcCodes:
+      merged.ipcCodes && merged.ipcCodes.length > 0
+        ? merged.ipcCodes
+        : ["A61K39/395", "A61P35/00", "C07K16/28"],
+    cpcCodes:
+      merged.cpcCodes && merged.cpcCodes.length > 0
+        ? merged.cpcCodes
+        : ["A61K39/39558", "A61P35/00", "C07K16/2866"],
+  };
 }

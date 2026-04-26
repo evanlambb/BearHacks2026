@@ -39,6 +39,37 @@ export interface IGeminiClient {
   matchPatent(prompt: string): Promise<PatentMatchDecision>;
 }
 
+function logMatchEvent(event: string, fields: Record<string, unknown>) {
+  console.info(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      scope: "scout-matching",
+      event,
+      ...fields,
+    }),
+  );
+}
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  onTimeoutMessage: string,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(onTimeoutMessage)), timeoutMs);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 function extractJsonObject(input: string): string {
   const trimmed = input.trim();
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) return trimmed;
@@ -270,6 +301,15 @@ function getModelClient(client?: IGeminiClient): IGeminiClient {
   return client ?? new GeminiClient();
 }
 
+function isDemoModeEnabled() {
+  return process.env.DEMO_FORCE_REPORTS === "1";
+}
+
+function getPinnedDemoPatentId() {
+  const raw = process.env.DEMO_TARGET_PATENT_ID?.trim();
+  return raw && raw.length > 0 ? raw : null;
+}
+
 async function resolveSupabaseAdmin(): Promise<MinimalSupabase> {
   const mod = await import("../../lib/supabase/admin");
   return mod.getSupabaseAdmin() as unknown as MinimalSupabase;
@@ -287,15 +327,47 @@ export async function processPendingScoutPatentMatches(
   const matcher = getModelClient(input.matcher);
   const envLimit = Number(process.env.GEMINI_MATCH_LIMIT ?? "");
   const limit = input.limit ?? (Number.isFinite(envLimit) && envLimit > 0 ? envLimit : undefined);
-  const pending = await loadRows(supabase, input.scoutId, limit);
+  const envTimeout = Number(process.env.GEMINI_MATCH_TIMEOUT_MS ?? "");
+  const matchTimeoutMs =
+    Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 45_000;
+  const heartbeatEvery = 10;
+  const allPending = await loadRows(supabase, input.scoutId, limit);
+  const demoMode = isDemoModeEnabled();
+  const pinnedDemoPatentId = getPinnedDemoPatentId();
+  const pending = demoMode
+    ? (pinnedDemoPatentId
+        ? allPending.filter((row) => row.patent_id === pinnedDemoPatentId)
+        : allPending
+      ).slice(0, 1)
+    : allPending;
+  const startedAt = Date.now();
 
   let matched = 0;
   let rejected = 0;
   let errors = 0;
+  let processed = 0;
 
-  for (const row of pending) {
+  logMatchEvent("batch.start", {
+    scoutId: input.scoutId ?? null,
+    pending: pending.length,
+    allPending: allPending.length,
+    limit: limit ?? null,
+    timeoutMs: matchTimeoutMs,
+    demoMode,
+    pinnedDemoPatentId,
+  });
+
+  for (const [index, row] of pending.entries()) {
+    const itemStart = Date.now();
     try {
       const ctx = await loadContext(supabase, row);
+      logMatchEvent("item.start", {
+        scoutId: ctx.scout.id,
+        patentId: ctx.patent.patent_id,
+        queueIndex: index + 1,
+        queueTotal: pending.length,
+      });
+
       const prompt = buildMatchPatentPrompt({
         scout: {
           countries: ctx.scout.countries,
@@ -355,7 +427,23 @@ export async function processPendingScoutPatentMatches(
         })),
       });
 
-      const decision = await matcher.matchPatent(prompt);
+      const decision = demoMode && matched === 0
+        ? {
+            match: true,
+            match_score: 0.99,
+            location_match: true,
+            therapeutic_area_match: true,
+            modality_match: true,
+            reason:
+              "Demo mode: forced positive match for showcase flow.",
+            matched_countries: ctx.scout.countries.slice(0, 3),
+            concerns: [],
+          }
+        : await withTimeout(
+            matcher.matchPatent(prompt),
+            matchTimeoutMs,
+            `Gemini match timed out after ${matchTimeoutMs}ms`,
+          );
       const status: MatchStatus = decision.match ? "matched" : "rejected";
 
       await updateMatchRow(supabase, row.id, status, {
@@ -372,16 +460,53 @@ export async function processPendingScoutPatentMatches(
       } else {
         rejected += 1;
       }
+      processed += 1;
+      logMatchEvent("item.complete", {
+        scoutId: ctx.scout.id,
+        patentId: ctx.patent.patent_id,
+        status,
+        score: decision.match_score,
+        durationMs: Date.now() - itemStart,
+      });
     } catch (error) {
       errors += 1;
+      processed += 1;
       await updateMatchRow(supabase, row.id, "error", {
         reason: `AI matching failed: ${error instanceof Error ? error.message : String(error)}`.slice(
           0,
           4000,
         ),
       });
+      logMatchEvent("item.error", {
+        rowId: row.id,
+        scoutId: row.scout_id,
+        patentId: row.patent_id,
+        durationMs: Date.now() - itemStart,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    if (processed === 1 || processed % heartbeatEvery === 0) {
+      logMatchEvent("batch.heartbeat", {
+        scoutId: input.scoutId ?? null,
+        processed,
+        total: pending.length,
+        matched,
+        rejected,
+        errors,
+        elapsedMs: Date.now() - startedAt,
+      });
     }
   }
+
+  logMatchEvent("batch.complete", {
+    scoutId: input.scoutId ?? null,
+    processed: pending.length,
+    matched,
+    rejected,
+    errors,
+    elapsedMs: Date.now() - startedAt,
+  });
 
   return {
     processed: pending.length,

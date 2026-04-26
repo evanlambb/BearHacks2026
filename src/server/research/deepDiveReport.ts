@@ -27,8 +27,104 @@ type DeepDiveContext = {
   epoFamilyMembers: EpoFamilyMemberRow[];
 };
 
+function metric(value: string | number | null, confidence: "high" | "medium" | "low" | "unknown" = "medium") {
+  return { value, confidence_note: null, confidence, evidence: [] };
+}
+
+function buildDemoDeepDiveReport(ctx: DeepDiveContext): DeepDiveReport {
+  const leadCountry = ctx.scout.countries[0] ?? "United States";
+  const secondCountry = ctx.scout.countries[1] ?? "Canada";
+  const title = ctx.patent.title?.slice(0, 80) ?? ctx.patent.patent_id;
+  return {
+    asset_summary: {
+      inn: metric(title, "medium"),
+      originator_brand: metric("Demo Brand", "low"),
+      molecule_class: metric(ctx.scout.modality, "medium"),
+      mechanism: metric("Mechanism under review", "low"),
+      indications: [metric(ctx.scout.therapeutic_area, "medium")],
+      dosage_forms: [metric("Oral", "low")],
+      strengths: [metric("10mg", "low")],
+    },
+    patent_and_exclusivity_landscape: {
+      composition_of_matter: [],
+      formulation: [],
+      method_of_use: [],
+      polymorph: [],
+      salt: [],
+      spc_pte: [],
+      pediatric_extensions: [],
+      data_exclusivity: [],
+      orphan_exclusivity: [],
+      expiry_timeline_by_country: [],
+    },
+    originator_and_filer_intelligence: {
+      molecule_owner: metric("Originator TBD", "low"),
+      current_generic_filers_by_country: [],
+      paragraph_iv_history: metric(null, "unknown"),
+      settlement_history: metric(null, "unknown"),
+    },
+    market_sizing: {
+      revenue_by_country: [
+        { country: leadCountry, value: 120_000_000, currency: "USD", confidence_note: null, confidence: "medium", evidence: [] },
+        { country: secondCountry, value: 40_000_000, currency: "USD", confidence_note: null, confidence: "low", evidence: [] },
+      ],
+      unit_volume_by_country: [],
+      growth: metric("4.5%", "low"),
+      payer_mix: metric("Public/private mixed", "low"),
+      tender_vs_retail: metric("Tender-led", "low"),
+      reference_pricing: metric("Likely in key markets", "low"),
+      post_loe_erosion_curve: metric("Moderate initial erosion", "low"),
+    },
+    competitive_density: {
+      existing_generic_approvals: metric("Low", "low"),
+      pipeline_filings: metric("Early signals", "low"),
+      pending_andas: metric(null, "unknown"),
+      biosimilar_developers: metric(null, "unknown"),
+    },
+    cdmo_matchmaking: { ranked_cdmos: [] },
+    api_and_ksm_sourcing: {
+      qualified_api_suppliers: metric("Available", "low"),
+      dmf_holders: metric("Unknown", "unknown"),
+      geographic_concentration_risk: metric("Moderate", "low"),
+      price_trend: metric("Stable", "low"),
+    },
+    regulatory_pathway: { filing_routes_by_country: [] },
+    risk_score: {
+      composite: { score: 0.42, explanation: "Moderate-risk demo profile", confidence_note: null, evidence: [] },
+      ip_litigation_risk: { score: 0.5, explanation: null, confidence_note: null, evidence: [] },
+      regulatory_risk: { score: 0.35, explanation: null, confidence_note: null, evidence: [] },
+      supply_concentration_risk: { score: 0.4, explanation: null, confidence_note: null, evidence: [] },
+      price_erosion_velocity: { score: 0.55, explanation: null, confidence_note: null, evidence: [] },
+      fx_risk: { score: 0.2, explanation: null, confidence_note: null, evidence: [] },
+      country_risk: { score: 0.3, explanation: null, confidence_note: null, evidence: [] },
+    },
+    financial_model: {
+      pnl_5y_by_country: [],
+      sensitivities: metric("Price and speed-to-market sensitive", "low"),
+      npv: metric(186_400_000, "low"),
+      irr: metric("28.7%", "low"),
+      payback: metric("3.2 years", "low"),
+      capex_and_tooling_estimate: metric(6_000_000, "low"),
+    },
+    strategic_recommendation: {
+      go_no_go: "go",
+      launch_sequence_by_country: [leadCountry, secondCountry],
+      partnership_vs_in_house: "Partner-led entry recommended.",
+      first_to_file_urgency: "High in first target country.",
+      confidence_note: "Demo-mode synthetic report.",
+      evidence: [],
+    },
+    evidence_pack: { claims: [] },
+  };
+}
+
 function getSonarClient(client?: ISonarClient): ISonarClient {
   return client ?? new SonarClient();
+}
+
+function getPinnedDemoPatentId() {
+  const raw = process.env.DEMO_TARGET_PATENT_ID?.trim();
+  return raw && raw.length > 0 ? raw : null;
 }
 
 async function resolveSupabaseAdmin(): Promise<MinimalSupabase> {
@@ -120,6 +216,25 @@ export async function processPendingDeepDiveReports(input: {
 } = {}): Promise<ProcessDeepDiveResult> {
   const supabase = input.supabase ?? (await resolveSupabaseAdmin());
   const sonarClient = getSonarClient(input.sonarClient);
+  const demoMode = process.env.DEMO_FORCE_REPORTS === "1";
+  const pinnedDemoPatentId = getPinnedDemoPatentId();
+
+  if (demoMode && input.scoutId && pinnedDemoPatentId) {
+    const { error: requeueError } = await supabase
+      .from("opportunity_reports")
+      .update({
+        report_status: "pending",
+        error_message: null,
+      })
+      .eq("scout_id", input.scoutId)
+      .eq("patent_id", pinnedDemoPatentId);
+    if (requeueError) {
+      throw new Error(
+        `Unable to requeue pinned demo report: ${requeueError.message}`,
+      );
+    }
+  }
+
   const pending = await loadPendingReports(supabase, input.scoutId);
 
   let succeeded = 0;
@@ -141,7 +256,9 @@ export async function processPendingDeepDiveReports(input: {
         epoPublications: ctx.epoPublications,
         epoFamilyMembers: ctx.epoFamilyMembers,
       });
-      const report = await sonarClient.generateDeepDive(prompt);
+      const report = demoMode
+        ? buildDemoDeepDiveReport(ctx)
+        : await sonarClient.generateDeepDive(prompt);
 
       await updateReport(supabase, opportunity.id, {
         report_json: report,

@@ -102,6 +102,7 @@ export async function processGeneratingOpportunityReports(input: {
   const writer = getWriter(input.writer);
   const render = input.pdfRenderer ?? renderReportPdf;
   const bucket = process.env.REPORT_BUCKET_NAME ?? "opportunity-reports";
+  const demoMode = process.env.DEMO_FORCE_REPORTS === "1";
   const generatingReports = await loadGeneratingReports(supabase, input.scoutId);
 
   let completed = 0;
@@ -117,15 +118,36 @@ export async function processGeneratingOpportunityReports(input: {
         report: ctx.reportJson,
       });
 
-      const title = ctx.opportunity.drug_name ?? ctx.patent.title ?? ctx.patent.patent_id;
-      const pdfBuffer = await render({ title, markdown });
-      if (pdfBuffer.length === 0) throw new Error("Rendered PDF is empty");
+      let storagePath: string | null = null;
+      try {
+        const title =
+          ctx.opportunity.drug_name ?? ctx.patent.title ?? ctx.patent.patent_id;
+        const pdfBuffer = await render({ title, markdown });
+        if (pdfBuffer.length === 0) throw new Error("Rendered PDF is empty");
 
-      const storagePath = buildStoragePath(ctx);
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(storagePath, pdfBuffer, { upsert: true, contentType: "application/pdf" });
-      if (uploadError) throw new Error(uploadError.message);
+        storagePath = buildStoragePath(ctx);
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(storagePath, pdfBuffer, {
+            upsert: true,
+            contentType: "application/pdf",
+          });
+        if (uploadError) throw new Error(uploadError.message);
+      } catch (pdfError) {
+        if (!demoMode) throw pdfError;
+        console.warn(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            scope: "scout-reports",
+            event: "pdf.skipped.demo",
+            reportId: row.id,
+            scoutId: row.scout_id,
+            patentId: row.patent_id,
+            error:
+              pdfError instanceof Error ? pdfError.message : String(pdfError),
+          }),
+        );
+      }
 
       await updateReport(supabase, row.id, {
         report_markdown: markdown,

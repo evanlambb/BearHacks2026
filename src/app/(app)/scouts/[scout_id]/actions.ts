@@ -33,6 +33,15 @@ export async function resumeScoutAction(scoutId: string) {
 
 export async function runScoutNowAction(scoutId: string) {
   const { supabase, user } = await requireUser();
+  console.info(
+    JSON.stringify({
+      ts: new Date().toISOString(),
+      scope: "scout-pipeline",
+      event: "action.run-now.requested",
+      scoutId,
+      userId: user.id,
+    }),
+  );
 
   const { data: scout, error: scoutError } = await supabase
     .from("scouts")
@@ -44,7 +53,30 @@ export async function runScoutNowAction(scoutId: string) {
   if (scoutError) throw new Error(scoutError.message);
   if (!scout) throw new Error("Scout not found");
 
-  await runTrackedScoutPipelineNow(scoutId);
+  try {
+    await runTrackedScoutPipelineNow(scoutId);
+    console.info(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        scope: "scout-pipeline",
+        event: "action.run-now.completed",
+        scoutId,
+        userId: user.id,
+      }),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        ts: new Date().toISOString(),
+        scope: "scout-pipeline",
+        event: "action.run-now.error",
+        scoutId,
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    throw error;
+  }
 
   revalidatePath(`/scouts/${scoutId}`);
   revalidatePath("/scouts");
